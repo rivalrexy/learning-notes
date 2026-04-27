@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { NoteType } from "@/app/types";
-import { getWeekNumber, todayISO } from "@/app/lib/utils";
+import { getWeekNumber, getWeekStartDate, todayISO } from "@/app/lib/utils";
 import { X, Plus, Minus, Loader2 } from "lucide-react";
+import DatePicker from "@/app/components/DatePicker";
+import WeekPicker from "@/app/components/WeekPicker";
 
 interface Source { id: string; title: string; type: string; }
 interface NoteData {
@@ -22,9 +24,13 @@ interface Props {
 
 export default function NoteModal({ type, note, sources, onSave, onClose }: Props) {
   const today = todayISO();
+  const nowDate = new Date();
+
   const [title, setTitle] = useState(note?.title ?? "");
   const [content, setContent] = useState(note?.content ?? "");
   const [date, setDate] = useState(note?.date ?? today);
+  const [weekNum, setWeekNum] = useState(note?.weekNumber ?? getWeekNumber(nowDate));
+  const [weekYear, setWeekYear] = useState(note?.year ?? nowDate.getFullYear());
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(note?.tags ?? []);
   const [selectedSources, setSelectedSources] = useState<string[]>(
@@ -47,9 +53,15 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
     if (!title.trim() || !content.trim()) return;
     setSaving(true);
 
-    const dateObj = new Date(date);
-    const wn = getWeekNumber(dateObj);
-    const yr = dateObj.getFullYear();
+    let noteDate = date;
+    if (type === "weekly") {
+      const ws = getWeekStartDate(weekNum, weekYear);
+      noteDate = [
+        ws.getFullYear(),
+        String(ws.getMonth() + 1).padStart(2, "0"),
+        String(ws.getDate()).padStart(2, "0"),
+      ].join("-");
+    }
 
     try {
       const url = note?.id ? `/api/notes/${note.id}` : "/api/notes";
@@ -62,9 +74,9 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
           title: title.trim(),
           content: content.trim(),
           type,
-          date,
-          weekNumber: type === "weekly" ? wn : null,
-          year: type === "weekly" ? yr : null,
+          date: noteDate,
+          weekNumber: type === "weekly" ? weekNum : null,
+          year: type === "weekly" ? weekYear : null,
           tags,
           sourceIds: selectedSources,
         }),
@@ -102,15 +114,22 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {type === "daily" ? "Tanggal" : "Minggu"}
+            </label>
+            {type === "daily" ? (
+              <DatePicker value={date} onChange={setDate} />
+            ) : (
+              <WeekPicker
+                weekNum={weekNum}
+                weekYear={weekYear}
+                onChange={(wn, yr) => { setWeekNum(wn); setWeekYear(yr); }}
+              />
+            )}
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Isi Catatan</label>
             <textarea
@@ -121,6 +140,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
             <div className="flex gap-2">
@@ -149,6 +169,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
               </div>
             )}
           </div>
+
           {sources.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Sumber Belajar</label>
