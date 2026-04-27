@@ -1,13 +1,18 @@
 "use client";
 
+import ReactMarkdown from "react-markdown";
 import { formatDate } from "@/app/lib/utils";
-import { Calendar, Tag, BookOpen, Trash2, Pencil } from "lucide-react";
+import { getYouTubeThumbnail } from "@/app/lib/utils";
+import { Calendar, Tag, BookOpen, Trash2, Pencil, ExternalLink } from "lucide-react";
+import ShareButton from "@/app/components/ShareButton";
 
-interface NoteSource { id: string; title: string; type: string; }
+interface NoteSource { id: string; title: string; type: string; url?: string; }
 interface Note {
   id: string; type: string; title: string; content: string;
   date: string; weekNumber?: number; tags: string[];
   sources: NoteSource[];
+  isPublic?: boolean;
+  shareToken?: string | null;
 }
 
 interface Props {
@@ -33,17 +38,37 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
           </div>
         </div>
         <div className="flex gap-1 shrink-0">
-          <button onClick={() => onEdit(note)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+          <ShareButton
+            noteId={note.id}
+            initialIsPublic={note.isPublic ?? false}
+            initialToken={note.shareToken ?? null}
+          />
+          <button
+            onClick={() => onEdit(note)}
+            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+          >
             <Pencil className="w-4 h-4" />
           </button>
-          <button onClick={() => onDelete(note.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+          <button
+            onClick={() => onDelete(note.id)}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <p className="mt-3 text-sm text-gray-600 line-clamp-3 whitespace-pre-line">{note.content}</p>
+      {/* Markdown content preview */}
+      <div
+        className="mt-3 overflow-hidden text-sm text-gray-600"
+        style={{ maxHeight: "4.5rem" }}
+      >
+        <div className="[&_p]:m-0 [&_h1]:text-base [&_h1]:font-bold [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:leading-normal [&_strong]:font-semibold [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:rounded [&_blockquote]:border-l-2 [&_blockquote]:border-gray-200 [&_blockquote]:pl-2 [&_blockquote]:text-gray-500">
+          <ReactMarkdown>{note.content}</ReactMarkdown>
+        </div>
+      </div>
 
+      {/* Tags */}
       {note.tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {note.tags.map((tag) => (
@@ -54,21 +79,63 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
         </div>
       )}
 
+      {/* Sources with thumbnails */}
       {note.sources.length > 0 && (
         <div className="mt-3 border-t border-gray-100 pt-3">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
             <BookOpen className="w-3.5 h-3.5" />
             <span className="font-medium">Sumber belajar</span>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {note.sources.map((s) => (
-              <span key={s.id} className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                s.type === "youtube" ? "bg-red-50 text-red-700"
-                : s.type === "book" ? "bg-amber-50 text-amber-700"
-                : "bg-blue-50 text-blue-700"}`}>
-                {s.title}
-              </span>
-            ))}
+          <div className="flex flex-wrap gap-2">
+            {note.sources.map((s) => {
+              const thumbnail =
+                s.type === "youtube" && s.url ? getYouTubeThumbnail(s.url) : null;
+              const cover = s.type === "book" && s.url ? s.url : null;
+              const mediaUrl = thumbnail ?? cover;
+              const hasLink = s.type !== "book" && s.url;
+
+              return (
+                <div
+                  key={s.id}
+                  className={`flex items-center gap-1.5 rounded-lg border border-gray-100 overflow-hidden ${
+                    s.type === "youtube"
+                      ? "bg-red-50"
+                      : s.type === "book"
+                      ? "bg-amber-50"
+                      : "bg-blue-50"
+                  }`}
+                >
+                  {mediaUrl && (
+                    <img
+                      src={mediaUrl}
+                      alt=""
+                      className="w-10 h-7 object-cover shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  )}
+                  <span className={`text-xs font-medium px-2 py-0.5 ${
+                    s.type === "youtube"
+                      ? "text-red-700"
+                      : s.type === "book"
+                      ? "text-amber-700"
+                      : "text-blue-700"
+                  }`}>
+                    {s.title}
+                  </span>
+                  {hasLink && (
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="mr-1.5 text-gray-400 hover:text-gray-600"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
