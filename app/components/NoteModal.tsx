@@ -4,7 +4,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { NoteType } from "@/app/types";
 import { getWeekNumber, getWeekStartDate, getYouTubeThumbnail, todayISO } from "@/app/lib/utils";
-import { X, Plus, Minus, Loader2, Check, Youtube, BookOpen, FileText, HelpCircle } from "lucide-react";
+import { X, Plus, Minus, Loader2, Check, Play, BookOpen, FileText, HelpCircle } from "lucide-react";
 import DatePicker from "@/app/components/DatePicker";
 import WeekPicker from "@/app/components/WeekPicker";
 
@@ -24,7 +24,7 @@ interface Props {
 }
 
 const sourceIcon: Record<string, React.ReactNode> = {
-  youtube: <Youtube className="w-6 h-6 text-red-500" />,
+  youtube: <Play className="w-6 h-6 text-red-500" />,
   book: <BookOpen className="w-6 h-6 text-amber-500" />,
   article: <FileText className="w-6 h-6 text-blue-500" />,
   other: <HelpCircle className="w-6 h-6 text-gray-400" />,
