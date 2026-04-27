@@ -1,4 +1,4 @@
-import { format, getWeek, getYear, startOfWeek, endOfWeek, parseISO } from "date-fns";
+import { format, getWeek, parseISO } from "date-fns";
 import { id } from "date-fns/locale";
 
 export function formatDate(date: string): string {
@@ -13,11 +13,20 @@ export function getWeekNumber(date: Date): number {
   return getWeek(date, { weekStartsOn: 1 });
 }
 
-export function getWeekRange(weekNum: number, year: number): string {
+export function getWeeksInYear(year: number): number {
+  return getWeek(new Date(year, 11, 28), { weekStartsOn: 1 });
+}
+
+export function getWeekStartDate(weekNum: number, year: number): Date {
   const jan4 = new Date(year, 0, 4);
-  const dayOfWeek = jan4.getDay() || 7;
+  const dow = jan4.getDay() || 7;
   const weekStart = new Date(jan4);
-  weekStart.setDate(jan4.getDate() - dayOfWeek + 1 + (weekNum - 1) * 7);
+  weekStart.setDate(jan4.getDate() - dow + 1 + (weekNum - 1) * 7);
+  return weekStart;
+}
+
+export function getWeekRange(weekNum: number, year: number): string {
+  const weekStart = getWeekStartDate(weekNum, year);
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekStart.getDate() + 6);
   return `${format(weekStart, "d MMM", { locale: id })} - ${format(weekEnd, "d MMM yyyy", { locale: id })}`;
