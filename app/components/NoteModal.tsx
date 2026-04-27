@@ -107,7 +107,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
     if (!nsTitle.trim()) return;
     setSavingNs(true);
     const urlToSave =
-      nsType === "book" ? (nsCover ?? nsUrl || null) : nsUrl || null;
+      nsType === "book" ? (nsCover ?? (nsUrl || null)) : nsUrl || null;
     try {
       const res = await fetch("/api/sources", {
         method: "POST",
