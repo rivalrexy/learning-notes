@@ -6,11 +6,12 @@ import NoteModal from "@/app/components/NoteModal";
 import { getWeekRange } from "@/app/lib/utils";
 import { Plus, CalendarDays, Search, Loader2 } from "lucide-react";
 
-interface Source { id: string; title: string; type: string; }
+interface Source { id: string; title: string; type: string; url?: string; }
 interface Note {
   id: string; type: "weekly"; title: string; content: string;
   date: string; weekNumber?: number; year?: number;
   tags: string[]; sources: Source[];
+  isPublic?: boolean; shareToken?: string | null;
 }
 
 export default function WeeklyPage() {

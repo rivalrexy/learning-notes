@@ -5,10 +5,11 @@ import NoteCard from "@/app/components/NoteCard";
 import NoteModal from "@/app/components/NoteModal";
 import { Plus, Calendar, Search, Loader2 } from "lucide-react";
 
-interface Source { id: string; title: string; type: string; }
+interface Source { id: string; title: string; type: string; url?: string; }
 interface Note {
   id: string; type: "daily"; title: string; content: string;
   date: string; tags: string[]; sources: Source[];
+  isPublic?: boolean; shareToken?: string | null;
 }
 
 export default function DailyPage() {

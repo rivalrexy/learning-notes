@@ -98,14 +98,22 @@ export default function SourceModal({ source, onSave, onClose }: Props) {
             />
           </div>
 
-          {(type === "youtube" || type === "article") && (
+          {(type === "youtube" || type === "article" || type === "book") && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">URL / Link</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {type === "book" ? "URL Cover / Link Buku (opsional)" : "URL / Link"}
+              </label>
               <input
                 type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder={type === "youtube" ? "https://youtube.com/watch?v=..." : "https://..."}
+                placeholder={
+                  type === "youtube"
+                    ? "https://youtube.com/watch?v=..."
+                    : type === "book"
+                    ? "https://covers.openlibrary.org/... atau URL gambar cover"
+                    : "https://..."
+                }
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>

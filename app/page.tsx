@@ -3,13 +3,60 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDate, getWeekRange } from "@/app/lib/utils";
-import { Calendar, CalendarDays, Library, BookOpen, TrendingUp, FileText } from "lucide-react";
+import { Calendar, CalendarDays, Library, BookOpen, TrendingUp, FileText, Flame, Zap } from "lucide-react";
 
 interface Note {
   id: string; type: string; title: string; content: string;
   date: string; weekNumber?: number; year?: number; tags: string[];
 }
 interface Source { id: string; type: string; title: string; }
+
+function calcStreak(dailyNotes: Note[]): number {
+  const dates = [...new Set(dailyNotes.map((n) => n.date))].sort().reverse();
+  if (dates.length === 0) return 0;
+
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
+  if (dates[0] !== today && dates[0] !== yesterday) return 0;
+
+  let streak = 1;
+  for (let i = 1; i < dates.length; i++) {
+    const diff = Math.round(
+      (new Date(dates[i - 1]).getTime() - new Date(dates[i]).getTime()) / 86_400_000
+    );
+    if (diff === 1) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function getActivityCells(dailyNotes: Note[]): { date: string; count: number }[] {
+  const counts = dailyNotes.reduce<Record<string, number>>((acc, n) => {
+    acc[n.date] = (acc[n.date] || 0) + 1;
+    return acc;
+  }, {});
+
+  const today = new Date();
+  // Start from Monday 11 weeks ago (84 days = 12 weeks)
+  const start = new Date(today);
+  start.setDate(today.getDate() - 83);
+
+  const cells: { date: string; count: number }[] = [];
+  for (let i = 0; i < 84; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const iso = d.toISOString().split("T")[0];
+    cells.push({ date: iso, count: counts[iso] ?? 0 });
+  }
+  return cells;
+}
+
+const activityColor = (count: number) => {
+  if (count === 0) return "bg-gray-100";
+  if (count === 1) return "bg-green-200";
+  if (count === 2) return "bg-green-400";
+  return "bg-green-600";
+};
 
 export default function Dashboard() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -30,6 +77,9 @@ export default function Dashboard() {
   const dailyNotes = notes.filter((n) => n.type === "daily");
   const weeklyNotes = notes.filter((n) => n.type === "weekly");
   const recentNotes = notes.slice(0, 5);
+
+  const streak = calcStreak(dailyNotes);
+  const activityCells = getActivityCells(dailyNotes);
 
   const stats = [
     { label: "Catatan Harian", value: dailyNotes.length, icon: Calendar, color: "bg-blue-50 text-blue-600", href: "/daily" },
@@ -60,6 +110,7 @@ export default function Dashboard() {
         <p className="text-gray-500 mt-1">Selamat datang di catatan belajarmu</p>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map(({ label, value, icon: Icon, color, href }) => (
           <Link key={label} href={href} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
@@ -72,6 +123,70 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Streak + Activity */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+              <Flame className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-bold text-gray-900">{streak}</span>
+                <span className="text-sm text-gray-500">hari berturut-turut</span>
+              </div>
+              <p className="text-xs text-gray-400">
+                {streak === 0
+                  ? "Buat catatan hari ini untuk memulai streak!"
+                  : streak >= 7
+                  ? "Luar biasa! Pertahankan semangatmu 🔥"
+                  : "Terus semangat belajar!"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <Zap className="w-3.5 h-3.5 text-yellow-500" />
+            <span>12 minggu terakhir</span>
+          </div>
+        </div>
+
+        {/* Activity grid */}
+        <div className="flex gap-0.5 flex-wrap">
+          {/* Day labels */}
+          <div className="flex flex-col gap-0.5 mr-1">
+            {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
+              <div key={d} className="h-3 text-[9px] text-gray-400 flex items-center">{d}</div>
+            ))}
+          </div>
+          {/* 12 columns of 7 days */}
+          {Array.from({ length: 12 }, (_, week) => (
+            <div key={week} className="flex flex-col gap-0.5">
+              {Array.from({ length: 7 }, (_, day) => {
+                const cell = activityCells[week * 7 + day];
+                if (!cell) return <div key={day} className="w-3 h-3" />;
+                return (
+                  <div
+                    key={day}
+                    title={`${cell.date}: ${cell.count} catatan`}
+                    className={`w-3 h-3 rounded-sm ${activityColor(cell.count)}`}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-400">
+          <span>Sedikit</span>
+          {["bg-gray-100", "bg-green-200", "bg-green-400", "bg-green-600"].map((c) => (
+            <div key={c} className={`w-3 h-3 rounded-sm ${c}`} />
+          ))}
+          <span>Banyak</span>
+        </div>
+      </div>
+
+      {/* Recent notes + sidebar */}
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">

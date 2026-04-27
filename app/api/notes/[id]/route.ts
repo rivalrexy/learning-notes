@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         set: sourceIds?.map((sid: string) => ({ id: sid })) ?? [],
       },
     },
-    include: { sources: { select: { id: true, title: true, type: true } } },
+    include: { sources: { select: { id: true, title: true, type: true, url: true } } },
   });
 
   return NextResponse.json(updated);

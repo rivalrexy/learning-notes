@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       userId: session.user.id,
       ...(type ? { type } : {}),
     },
-    include: { sources: { select: { id: true, title: true, type: true } } },
+    include: { sources: { select: { id: true, title: true, type: true, url: true } } },
     orderBy: { date: "desc" },
   });
 
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         ? { connect: sourceIds.map((id: string) => ({ id })) }
         : undefined,
     },
-    include: { sources: { select: { id: true, title: true, type: true } } },
+    include: { sources: { select: { id: true, title: true, type: true, url: true } } },
   });
 
   return NextResponse.json(note, { status: 201 });
