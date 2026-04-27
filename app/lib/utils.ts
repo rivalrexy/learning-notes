@@ -9,12 +9,15 @@ export function formatDateTime(date: string): string {
   return format(parseISO(date), "d MMM yyyy, HH:mm", { locale: id });
 }
 
+const ISO_WEEK_OPTS = { weekStartsOn: 1, firstWeekContainsDate: 4 } as const;
+
 export function getWeekNumber(date: Date): number {
-  return getWeek(date, { weekStartsOn: 1 });
+  return getWeek(date, ISO_WEEK_OPTS);
 }
 
 export function getWeeksInYear(year: number): number {
-  return getWeek(new Date(year, 11, 28), { weekStartsOn: 1 });
+  // Dec 28 is always in the last ISO week of its own year
+  return getWeek(new Date(year, 11, 28), ISO_WEEK_OPTS);
 }
 
 export function getWeekStartDate(weekNum: number, year: number): Date {

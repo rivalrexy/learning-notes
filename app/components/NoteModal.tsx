@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { NoteType } from "@/app/types";
 import { getWeekNumber, getWeekStartDate, getYouTubeThumbnail, todayISO } from "@/app/lib/utils";
-import { X, Plus, Minus, Loader2, Check, Play, BookOpen, FileText, HelpCircle } from "lucide-react";
+import {
+  X, Plus, Minus, Loader2, Check,
+  Play, BookOpen, FileText, HelpCircle,
+  Upload, Eye, Pencil,
+} from "lucide-react";
 import DatePicker from "@/app/components/DatePicker";
 import WeekPicker from "@/app/components/WeekPicker";
+import MarkdownToolbar from "@/app/components/MarkdownToolbar";
 
-interface Source { id: string; title: string; type: string; url?: string; }
+type SrcType = "youtube" | "book" | "article" | "other";
+
+interface Source { id: string; title: string; type: string; url?: string | null; }
 interface NoteData {
   id?: string; type: NoteType; title: string; content: string;
   date: string; weekNumber?: number; year?: number;
@@ -23,23 +30,30 @@ interface Props {
   onClose: () => void;
 }
 
-const sourceIcon: Record<string, React.ReactNode> = {
-  youtube: <Play className="w-6 h-6 text-red-500" />,
-  book: <BookOpen className="w-6 h-6 text-amber-500" />,
-  article: <FileText className="w-6 h-6 text-blue-500" />,
-  other: <HelpCircle className="w-6 h-6 text-gray-400" />,
+const srcIcon: Record<string, React.ReactNode> = {
+  youtube:  <Play className="w-5 h-5 text-red-500" />,
+  book:     <BookOpen className="w-5 h-5 text-amber-500" />,
+  article:  <FileText className="w-5 h-5 text-blue-500" />,
+  other:    <HelpCircle className="w-5 h-5 text-gray-400" />,
 };
-const sourceBg: Record<string, string> = {
-  youtube: "bg-red-50",
-  book: "bg-amber-50",
-  article: "bg-blue-50",
-  other: "bg-gray-50",
+const srcBg: Record<string, string> = {
+  youtube: "bg-red-50", book: "bg-amber-50", article: "bg-blue-50", other: "bg-gray-50",
+};
+const srcTypeLabel: Record<SrcType, string> = {
+  youtube: "YouTube", book: "Buku", article: "Artikel", other: "Lainnya",
+};
+const srcTypeColor: Record<SrcType, string> = {
+  youtube: "bg-red-100 text-red-700 border-red-200",
+  book:    "bg-amber-100 text-amber-700 border-amber-200",
+  article: "bg-blue-100 text-blue-700 border-blue-200",
+  other:   "bg-gray-100 text-gray-700 border-gray-200",
 };
 
 export default function NoteModal({ type, note, sources, onSave, onClose }: Props) {
   const today = todayISO();
   const nowDate = new Date();
 
+  // ── Note state ──────────────────────────────────────────────────────────
   const [title, setTitle] = useState(note?.title ?? "");
   const [content, setContent] = useState(note?.content ?? "");
   const [date, setDate] = useState(note?.date ?? today);
@@ -53,6 +67,71 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
 
+  // ── Textarea auto-resize ─────────────────────────────────────────────────
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const autoResize = (el: HTMLTextAreaElement) => {
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
+  useEffect(() => {
+    if (textareaRef.current) autoResize(textareaRef.current);
+  }, []);
+
+  // ── Source list (local copy so we can append new ones) ───────────────────
+  const [localSources, setLocalSources] = useState<Source[]>(sources);
+
+  // ── Inline source form state ─────────────────────────────────────────────
+  const [addingSource, setAddingSource] = useState(false);
+  const [nsType, setNsType] = useState<SrcType>("youtube");
+  const [nsTitle, setNsTitle] = useState("");
+  const [nsUrl, setNsUrl] = useState("");
+  const [nsAuthor, setNsAuthor] = useState("");
+  const [nsCover, setNsCover] = useState<string | null>(null); // data URL or web URL
+  const [savingNs, setSavingNs] = useState(false);
+
+  const ytThumb = nsType === "youtube" && nsUrl ? getYouTubeThumbnail(nsUrl) : null;
+
+  const resetNewSource = () => {
+    setNsTitle(""); setNsUrl(""); setNsAuthor(""); setNsCover(null); setNsType("youtube");
+  };
+
+  const handleCoverFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setNsCover((ev.target?.result as string) ?? null);
+    reader.readAsDataURL(file);
+  };
+
+  const saveNewSource = async () => {
+    if (!nsTitle.trim()) return;
+    setSavingNs(true);
+    const urlToSave =
+      nsType === "book" ? (nsCover ?? nsUrl || null) : nsUrl || null;
+    try {
+      const res = await fetch("/api/sources", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: nsType,
+          title: nsTitle.trim(),
+          author: nsAuthor.trim() || null,
+          url: urlToSave,
+        }),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        setLocalSources((prev) => [saved, ...prev]);
+        setSelectedSources((prev) => [...prev, saved.id]);
+        setAddingSource(false);
+        resetNewSource();
+      }
+    } finally {
+      setSavingNs(false);
+    }
+  };
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
   const addTag = () => {
     const t = tagInput.trim().toLowerCase();
     if (t && !tags.includes(t)) setTags([...tags, t]);
@@ -81,7 +160,6 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
     try {
       const url = note?.id ? `/api/notes/${note.id}` : "/api/notes";
       const method = note?.id ? "PUT" : "POST";
-
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -96,19 +174,18 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
           sourceIds: selectedSources,
         }),
       });
-
-      if (res.ok) {
-        const saved = await res.json();
-        onSave(saved);
-      }
+      if (res.ok) onSave(await res.json());
     } finally {
       setSaving(false);
     }
   };
 
+  // ────────────────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[92vh] flex flex-col">
+
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900">
             {note ? "Edit Catatan" : type === "daily" ? "Catatan Harian" : "Catatan Mingguan"}
@@ -118,22 +195,24 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
           {/* Judul */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Judul</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Judul</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Judul catatan..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 focus:bg-white transition-colors"
             />
           </div>
 
-          {/* Date / Week picker */}
+          {/* Date / Week */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
               {type === "daily" ? "Tanggal" : "Minggu"}
             </label>
             {type === "daily" ? (
@@ -147,69 +226,68 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
             )}
           </div>
 
-          {/* Isi Catatan + Markdown preview */}
+          {/* Isi Catatan */}
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-1.5">
               <label className="text-sm font-medium text-gray-700">Isi Catatan</label>
-              <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode(false)}
-                  className={`px-3 py-1 transition-colors ${!previewMode ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-gray-50"}`}
-                >
-                  Tulis
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode(true)}
-                  className={`px-3 py-1 transition-colors ${previewMode ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-gray-50"}`}
-                >
-                  Pratinjau
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewMode((v) => !v)}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
+              >
+                {previewMode
+                  ? <><Pencil className="w-3 h-3" /> Tulis</>
+                  : <><Eye className="w-3 h-3" /> Pratinjau</>}
+              </button>
             </div>
+
             {previewMode ? (
-              <div className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[9rem] text-sm text-gray-700 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:font-semibold [&_p]:my-1 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-100 [&_pre]:p-2 [&_pre]:rounded [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_strong]:font-semibold [&_em]:italic">
-                {content ? (
-                  <ReactMarkdown>{content}</ReactMarkdown>
-                ) : (
-                  <p className="text-gray-400 italic">Belum ada konten...</p>
-                )}
+              <div className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-40 text-sm text-gray-700 bg-gray-50 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:font-semibold [&_h3]:font-semibold [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_code]:bg-gray-200 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-200 [&_pre]:p-2 [&_pre]:rounded-lg [&_blockquote]:border-l-4 [&_blockquote]:border-indigo-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_hr]:border-gray-200 [&_strong]:font-semibold">
+                {content.trim()
+                  ? <ReactMarkdown>{content}</ReactMarkdown>
+                  : <p className="text-gray-400 italic">Belum ada konten...</p>}
               </div>
             ) : (
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Tuliskan apa yang kamu pelajari... (mendukung Markdown)"
-                rows={6}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-              />
+              <div className="rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+                <MarkdownToolbar textareaRef={textareaRef} value={content} onChange={setContent} />
+                <textarea
+                  ref={textareaRef}
+                  value={content}
+                  onChange={(e) => {
+                    setContent(e.target.value);
+                    autoResize(e.target);
+                  }}
+                  placeholder="Tuliskan apa yang kamu pelajari...&#10;&#10;Mendukung Markdown:&#10;**bold**, *italic*, ## heading, - list, > kutipan, `kode`"
+                  rows={8}
+                  className="w-full px-4 py-3 text-sm text-gray-800 resize-none focus:outline-none bg-white placeholder:text-gray-300 leading-relaxed min-h-40"
+                  style={{ height: "auto" }}
+                />
+              </div>
             )}
-            <p className="text-xs text-gray-400 mt-1">Mendukung format Markdown: **bold**, *italic*, # heading, - list</p>
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Tags</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                placeholder="Tambah tag (enter)"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Tambah tag, tekan Enter"
+                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 focus:bg-white transition-colors"
               />
-              <button onClick={addTag} className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+              <button onClick={addTag} className="px-3 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">
                 <Plus className="w-4 h-4" />
               </button>
             </div>
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {tags.map((tag) => (
-                  <span key={tag} className="flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs px-2 py-1 rounded-full">
+                  <span key={tag} className="flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full">
                     {tag}
-                    <button onClick={() => setTags(tags.filter((t) => t !== tag))}>
+                    <button onClick={() => setTags(tags.filter((t) => t !== tag))} className="hover:text-indigo-900">
                       <Minus className="w-3 h-3" />
                     </button>
                   </span>
@@ -218,15 +296,150 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
             )}
           </div>
 
-          {/* Sources — visual cards */}
-          {sources.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sumber Belajar</label>
-              <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
-                {sources.map((s) => {
+          {/* Sumber Belajar */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">Sumber Belajar</label>
+              <button
+                type="button"
+                onClick={() => { setAddingSource((v) => !v); if (addingSource) resetNewSource(); }}
+                className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Tambah Baru
+              </button>
+            </div>
+
+            {/* ── Inline add source form ── */}
+            {addingSource && (
+              <div className="border border-dashed border-indigo-300 rounded-xl p-4 mb-3 bg-indigo-50/30 space-y-3">
+
+                {/* Type selector */}
+                <div className="grid grid-cols-4 gap-1.5">
+                  {(["youtube", "book", "article", "other"] as SrcType[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => { setNsType(t); setNsCover(null); setNsUrl(""); }}
+                      className={`py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                        nsType === t ? srcTypeColor[t] + " ring-1 ring-offset-1 ring-indigo-300" : "border-gray-200 text-gray-400 hover:border-gray-300"
+                      }`}
+                    >
+                      {srcTypeLabel[t]}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Title */}
+                <input
+                  type="text"
+                  value={nsTitle}
+                  onChange={(e) => setNsTitle(e.target.value)}
+                  placeholder={nsType === "youtube" ? "Judul video..." : nsType === "book" ? "Judul buku..." : "Judul..."}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                />
+
+                {/* Author */}
+                {(nsType === "youtube" || nsType === "book") && (
+                  <input
+                    type="text"
+                    value={nsAuthor}
+                    onChange={(e) => setNsAuthor(e.target.value)}
+                    placeholder={nsType === "youtube" ? "Nama channel..." : "Nama penulis..."}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  />
+                )}
+
+                {/* YouTube: URL + live thumbnail */}
+                {(nsType === "youtube" || nsType === "article") && (
+                  <div className="space-y-2">
+                    <input
+                      type="url"
+                      value={nsUrl}
+                      onChange={(e) => setNsUrl(e.target.value)}
+                      placeholder={nsType === "youtube" ? "https://youtube.com/watch?v=..." : "https://..."}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    />
+                    {ytThumb && (
+                      <div className="relative rounded-lg overflow-hidden">
+                        <img src={ytThumb} alt="Thumbnail" className="w-full h-32 object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center shadow-lg">
+                            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Book: cover upload + URL fallback */}
+                {nsType === "book" && (
+                  <div className="space-y-2">
+                    <div className="flex gap-2 items-center">
+                      <label className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg py-2.5 cursor-pointer hover:border-indigo-400 hover:bg-white transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverFile}
+                          className="sr-only"
+                        />
+                        <Upload className="w-4 h-4 text-gray-400" />
+                        <span className="text-xs text-gray-500">Upload cover</span>
+                      </label>
+                      <span className="text-xs text-gray-400">atau</span>
+                      <input
+                        type="url"
+                        value={nsUrl}
+                        onChange={(e) => { setNsUrl(e.target.value); setNsCover(null); }}
+                        placeholder="URL gambar cover..."
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                      />
+                    </div>
+                    {(nsCover ?? nsUrl) && (
+                      <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-100">
+                        <img
+                          src={nsCover ?? nsUrl}
+                          alt="Cover"
+                          className="w-14 h-20 object-cover rounded border border-gray-100 shrink-0"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                        <div className="text-xs text-gray-500">
+                          <p className="font-medium text-gray-700">{nsTitle || "Judul buku"}</p>
+                          {nsAuthor && <p className="mt-0.5">{nsAuthor}</p>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Form actions */}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => { setAddingSource(false); resetNewSource(); }}
+                    className="flex-1 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveNewSource}
+                    disabled={!nsTitle.trim() || savingNs}
+                    className="flex-1 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    {savingNs && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    Tambah Sumber
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── Source selection grid ── */}
+            {localSources.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-0.5">
+                {localSources.map((s) => {
                   const isSelected = selectedSources.includes(s.id);
-                  const thumbnail =
-                    s.type === "youtube" && s.url ? getYouTubeThumbnail(s.url) : null;
+                  const thumbnail = s.type === "youtube" && s.url ? getYouTubeThumbnail(s.url) : null;
                   const cover = s.type === "book" && s.url ? s.url : null;
                   const mediaUrl = thumbnail ?? cover;
 
@@ -235,12 +448,9 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                       key={s.id}
                       onClick={() => toggleSource(s.id)}
                       className={`relative cursor-pointer rounded-xl border-2 overflow-hidden transition-all ${
-                        isSelected
-                          ? "border-indigo-500 ring-2 ring-indigo-100"
-                          : "border-gray-100 hover:border-gray-300"
+                        isSelected ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-100 hover:border-gray-300"
                       }`}
                     >
-                      {/* Thumbnail / cover / icon */}
                       {mediaUrl ? (
                         <img
                           src={mediaUrl}
@@ -249,20 +459,16 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       ) : (
-                        <div className={`h-16 flex items-center justify-center ${sourceBg[s.type] ?? "bg-gray-50"}`}>
-                          {sourceIcon[s.type] ?? sourceIcon.other}
+                        <div className={`h-16 flex items-center justify-center ${srcBg[s.type] ?? "bg-gray-50"}`}>
+                          {srcIcon[s.type] ?? srcIcon.other}
                         </div>
                       )}
-
-                      {/* Info */}
                       <div className="px-2 py-1.5 bg-white">
                         <p className="text-xs font-medium text-gray-800 line-clamp-1">{s.title}</p>
                         <p className="text-[10px] text-gray-400 capitalize">{s.type}</p>
                       </div>
-
-                      {/* Check mark */}
                       {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+                        <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center shadow">
                           <Check className="w-3 h-3 text-white" />
                         </div>
                       )}
@@ -270,21 +476,26 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                   );
                 })}
               </div>
-            </div>
-          )}
+            ) : !addingSource && (
+              <p className="text-xs text-gray-400 py-3 text-center border border-dashed border-gray-200 rounded-xl">
+                Belum ada sumber. Klik <strong>Tambah Baru</strong> untuk menambahkan.
+              </p>
+            )}
+          </div>
         </div>
 
+        {/* Footer */}
         <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
-          <button onClick={onClose} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-medium">
             Batal
           </button>
           <button
             onClick={handleSave}
             disabled={!title.trim() || !content.trim() || saving}
-            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            {saving ? "Menyimpan..." : "Simpan"}
+            {saving ? "Menyimpan..." : "Simpan Catatan"}
           </button>
         </div>
       </div>
