@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { BookOpen, Calendar, CalendarDays, Library, LayoutDashboard, LogOut, User, ChevronDown } from "lucide-react";
+import { BookOpen, Calendar, CalendarDays, Library, LayoutDashboard, LogOut, User, ChevronDown, Globe } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/daily", label: "Harian", icon: Calendar },
   { href: "/weekly", label: "Mingguan", icon: CalendarDays },
   { href: "/sources", label: "Sumber Belajar", icon: Library },
+  { href: "/jelajahi", label: "Jelajahi", icon: Globe },
 ];
 
 export default function Navbar() {
