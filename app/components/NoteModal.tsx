@@ -37,23 +37,25 @@ const srcIcon: Record<string, React.ReactNode> = {
   other:    <HelpCircle className="w-5 h-5 text-gray-400" />,
 };
 const srcBg: Record<string, string> = {
-  youtube: "bg-red-50", book: "bg-amber-50", article: "bg-blue-50", other: "bg-gray-50",
+  youtube: "bg-red-50 dark:bg-red-900/20",
+  book: "bg-amber-50 dark:bg-amber-900/20",
+  article: "bg-blue-50 dark:bg-blue-900/20",
+  other: "bg-gray-50 dark:bg-gray-700",
 };
 const srcTypeLabel: Record<SrcType, string> = {
   youtube: "YouTube", book: "Buku", article: "Artikel", other: "Lainnya",
 };
 const srcTypeColor: Record<SrcType, string> = {
-  youtube: "bg-red-100 text-red-700 border-red-200",
-  book:    "bg-amber-100 text-amber-700 border-amber-200",
-  article: "bg-blue-100 text-blue-700 border-blue-200",
-  other:   "bg-gray-100 text-gray-700 border-gray-200",
+  youtube: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800",
+  book:    "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800",
+  article: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
+  other:   "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600",
 };
 
 export default function NoteModal({ type, note, sources, onSave, onClose }: Props) {
   const today = todayISO();
   const nowDate = new Date();
 
-  // ── Note state ──────────────────────────────────────────────────────────
   const [title, setTitle] = useState(note?.title ?? "");
   const [content, setContent] = useState(note?.content ?? "");
   const [date, setDate] = useState(note?.date ?? today);
@@ -67,7 +69,6 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
 
-  // ── Textarea auto-resize ─────────────────────────────────────────────────
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = "auto";
@@ -77,16 +78,14 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
     if (textareaRef.current) autoResize(textareaRef.current);
   }, []);
 
-  // ── Source list (local copy so we can append new ones) ───────────────────
   const [localSources, setLocalSources] = useState<Source[]>(sources);
 
-  // ── Inline source form state ─────────────────────────────────────────────
   const [addingSource, setAddingSource] = useState(false);
   const [nsType, setNsType] = useState<SrcType>("youtube");
   const [nsTitle, setNsTitle] = useState("");
   const [nsUrl, setNsUrl] = useState("");
   const [nsAuthor, setNsAuthor] = useState("");
-  const [nsCover, setNsCover] = useState<string | null>(null); // data URL or web URL
+  const [nsCover, setNsCover] = useState<string | null>(null);
   const [savingNs, setSavingNs] = useState(false);
 
   const ytThumb = nsType === "youtube" && nsUrl ? getYouTubeThumbnail(nsUrl) : null;
@@ -131,7 +130,6 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
     }
   };
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
   const addTag = () => {
     const t = tagInput.trim().toLowerCase();
     if (t && !tags.includes(t)) setTags([...tags, t]);
@@ -180,17 +178,16 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
     }
   };
 
-  // ────────────────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[92vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[92vh] flex flex-col">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {note ? "Edit Catatan" : type === "daily" ? "Catatan Harian" : "Catatan Mingguan"}
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -200,19 +197,19 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
 
           {/* Judul */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Judul</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Judul</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Judul catatan..."
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 focus:bg-white transition-colors"
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-600 transition-colors"
             />
           </div>
 
           {/* Date / Week */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               {type === "daily" ? "Tanggal" : "Minggu"}
             </label>
             {type === "daily" ? (
@@ -229,11 +226,11 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
           {/* Isi Catatan */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-sm font-medium text-gray-700">Isi Catatan</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Isi Catatan</label>
               <button
                 type="button"
                 onClick={() => setPreviewMode((v) => !v)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
               >
                 {previewMode
                   ? <><Pencil className="w-3 h-3" /> Tulis</>
@@ -242,13 +239,13 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
             </div>
 
             {previewMode ? (
-              <div className="w-full border border-gray-200 rounded-xl px-4 py-3 min-h-40 text-sm text-gray-700 bg-gray-50 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:font-semibold [&_h3]:font-semibold [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_code]:bg-gray-200 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-200 [&_pre]:p-2 [&_pre]:rounded-lg [&_blockquote]:border-l-4 [&_blockquote]:border-indigo-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_hr]:border-gray-200 [&_strong]:font-semibold">
+              <div className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 min-h-40 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:font-semibold [&_h3]:font-semibold [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_code]:bg-gray-200 dark:[&_code]:bg-gray-600 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-200 dark:[&_pre]:bg-gray-600 [&_pre]:p-2 [&_pre]:rounded-lg [&_blockquote]:border-l-4 [&_blockquote]:border-indigo-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_hr]:border-gray-200 dark:[&_hr]:border-gray-600 [&_strong]:font-semibold">
                 {content.trim()
                   ? <ReactMarkdown>{content}</ReactMarkdown>
                   : <p className="text-gray-400 italic">Belum ada konten...</p>}
               </div>
             ) : (
-              <div className="rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+              <div className="rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
                 <MarkdownToolbar textareaRef={textareaRef} value={content} onChange={setContent} />
                 <textarea
                   ref={textareaRef}
@@ -259,7 +256,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                   }}
                   placeholder="Tuliskan apa yang kamu pelajari...&#10;&#10;Mendukung Markdown:&#10;**bold**, *italic*, ## heading, - list, > kutipan, `kode`"
                   rows={8}
-                  className="w-full px-4 py-3 text-sm text-gray-800 resize-none focus:outline-none bg-white placeholder:text-gray-300 leading-relaxed min-h-40"
+                  className="w-full px-4 py-3 text-sm text-gray-800 dark:text-gray-200 resize-none focus:outline-none bg-white dark:bg-gray-700 placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed min-h-40"
                   style={{ height: "auto" }}
                 />
               </div>
@@ -268,7 +265,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Tags</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Tags</label>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -276,7 +273,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
                 placeholder="Tambah tag, tekan Enter"
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 focus:bg-white transition-colors"
+                className="flex-1 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-600 transition-colors"
               />
               <button onClick={addTag} className="px-3 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">
                 <Plus className="w-4 h-4" />
@@ -285,9 +282,9 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {tags.map((tag) => (
-                  <span key={tag} className="flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full">
+                  <span key={tag} className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs px-2.5 py-1 rounded-full">
                     {tag}
-                    <button onClick={() => setTags(tags.filter((t) => t !== tag))} className="hover:text-indigo-900">
+                    <button onClick={() => setTags(tags.filter((t) => t !== tag))} className="hover:text-indigo-900 dark:hover:text-indigo-100">
                       <Minus className="w-3 h-3" />
                     </button>
                   </span>
@@ -299,19 +296,19 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
           {/* Sumber Belajar */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">Sumber Belajar</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Sumber Belajar</label>
               <button
                 type="button"
                 onClick={() => { setAddingSource((v) => !v); if (addingSource) resetNewSource(); }}
-                className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
+                className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" /> Tambah Baru
               </button>
             </div>
 
-            {/* ── Inline add source form ── */}
+            {/* Inline add source form */}
             {addingSource && (
-              <div className="border border-dashed border-indigo-300 rounded-xl p-4 mb-3 bg-indigo-50/30 space-y-3">
+              <div className="border border-dashed border-indigo-300 dark:border-indigo-700 rounded-xl p-4 mb-3 bg-indigo-50/30 dark:bg-indigo-900/10 space-y-3">
 
                 {/* Type selector */}
                 <div className="grid grid-cols-4 gap-1.5">
@@ -321,7 +318,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                       type="button"
                       onClick={() => { setNsType(t); setNsCover(null); setNsUrl(""); }}
                       className={`py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                        nsType === t ? srcTypeColor[t] + " ring-1 ring-offset-1 ring-indigo-300" : "border-gray-200 text-gray-400 hover:border-gray-300"
+                        nsType === t ? srcTypeColor[t] + " ring-1 ring-offset-1 ring-indigo-300" : "border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-500"
                       }`}
                     >
                       {srcTypeLabel[t]}
@@ -335,7 +332,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                   value={nsTitle}
                   onChange={(e) => setNsTitle(e.target.value)}
                   placeholder={nsType === "youtube" ? "Judul video..." : nsType === "book" ? "Judul buku..." : "Judul..."}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
 
                 {/* Author */}
@@ -345,11 +342,11 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                     value={nsAuthor}
                     onChange={(e) => setNsAuthor(e.target.value)}
                     placeholder={nsType === "youtube" ? "Nama channel..." : "Nama penulis..."}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 )}
 
-                {/* YouTube: URL + live thumbnail */}
+                {/* YouTube / Article: URL + live thumbnail */}
                 {(nsType === "youtube" || nsType === "article") && (
                   <div className="space-y-2">
                     <input
@@ -357,7 +354,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                       value={nsUrl}
                       onChange={(e) => setNsUrl(e.target.value)}
                       placeholder={nsType === "youtube" ? "https://youtube.com/watch?v=..." : "https://..."}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                      className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                     {ytThumb && (
                       <div className="relative rounded-lg overflow-hidden">
@@ -372,39 +369,39 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                   </div>
                 )}
 
-                {/* Book: cover upload + URL fallback */}
+                {/* Book: cover upload + URL — stacked on mobile, side-by-side on sm+ */}
                 {nsType === "book" && (
                   <div className="space-y-2">
-                    <div className="flex gap-2 items-center">
-                      <label className="flex-1 flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-lg py-2.5 cursor-pointer hover:border-indigo-400 hover:bg-white transition-colors">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                      <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg py-2.5 cursor-pointer hover:border-indigo-400 hover:bg-white dark:hover:bg-gray-600 transition-colors sm:flex-1">
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleCoverFile}
                           className="sr-only"
                         />
-                        <Upload className="w-4 h-4 text-gray-400" />
-                        <span className="text-xs text-gray-500">Upload cover</span>
+                        <Upload className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Upload cover</span>
                       </label>
-                      <span className="text-xs text-gray-400">atau</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 text-center">atau</span>
                       <input
                         type="url"
                         value={nsUrl}
                         onChange={(e) => { setNsUrl(e.target.value); setNsCover(null); }}
                         placeholder="URL gambar cover..."
-                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                        className="w-full sm:flex-1 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
                     {(nsCover ?? nsUrl) && (
-                      <div className="flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-100">
+                      <div className="flex items-center gap-3 p-2 bg-white dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
                         <img
                           src={nsCover ?? nsUrl}
                           alt="Cover"
-                          className="w-14 h-20 object-cover rounded border border-gray-100 shrink-0"
+                          className="w-14 h-20 object-cover rounded border border-gray-100 dark:border-gray-600 shrink-0"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
-                        <div className="text-xs text-gray-500">
-                          <p className="font-medium text-gray-700">{nsTitle || "Judul buku"}</p>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="font-medium text-gray-700 dark:text-gray-200">{nsTitle || "Judul buku"}</p>
                           {nsAuthor && <p className="mt-0.5">{nsAuthor}</p>}
                         </div>
                       </div>
@@ -417,7 +414,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                   <button
                     type="button"
                     onClick={() => { setAddingSource(false); resetNewSource(); }}
-                    className="flex-1 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="flex-1 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     Batal
                   </button>
@@ -434,7 +431,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
               </div>
             )}
 
-            {/* ── Source selection grid ── */}
+            {/* Source selection grid */}
             {localSources.length > 0 ? (
               <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-0.5">
                 {localSources.map((s) => {
@@ -448,7 +445,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                       key={s.id}
                       onClick={() => toggleSource(s.id)}
                       className={`relative cursor-pointer rounded-xl border-2 overflow-hidden transition-all ${
-                        isSelected ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-100 hover:border-gray-300"
+                        isSelected ? "border-indigo-500 ring-2 ring-indigo-100 dark:ring-indigo-900" : "border-gray-100 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
                       }`}
                     >
                       {mediaUrl ? (
@@ -459,13 +456,13 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       ) : (
-                        <div className={`h-16 flex items-center justify-center ${srcBg[s.type] ?? "bg-gray-50"}`}>
+                        <div className={`h-16 flex items-center justify-center ${srcBg[s.type] ?? "bg-gray-50 dark:bg-gray-700"}`}>
                           {srcIcon[s.type] ?? srcIcon.other}
                         </div>
                       )}
-                      <div className="px-2 py-1.5 bg-white">
-                        <p className="text-xs font-medium text-gray-800 line-clamp-1">{s.title}</p>
-                        <p className="text-[10px] text-gray-400 capitalize">{s.type}</p>
+                      <div className="px-2 py-1.5 bg-white dark:bg-gray-700">
+                        <p className="text-xs font-medium text-gray-800 dark:text-gray-200 line-clamp-1">{s.title}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 capitalize">{s.type}</p>
                       </div>
                       {isSelected && (
                         <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center shadow">
@@ -477,7 +474,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                 })}
               </div>
             ) : !addingSource && (
-              <p className="text-xs text-gray-400 py-3 text-center border border-dashed border-gray-200 rounded-xl">
+              <p className="text-xs text-gray-400 dark:text-gray-500 py-3 text-center border border-dashed border-gray-200 dark:border-gray-600 rounded-xl">
                 Belum ada sumber. Klik <strong>Tambah Baru</strong> untuk menambahkan.
               </p>
             )}
@@ -485,8 +482,8 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-gray-100">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 text-sm font-medium">
+        <div className="flex gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-700 shrink-0">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium transition-colors">
             Batal
           </button>
           <button
