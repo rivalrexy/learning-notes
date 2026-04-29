@@ -55,17 +55,17 @@ export default function WeeklyPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <CalendarDays className="w-6 h-6 text-purple-600" />
             Catatan Mingguan
           </h1>
-          <p className="text-gray-500 mt-1">{notes.length} catatan tersimpan</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{notes.length} catatan tersimpan</p>
         </div>
         <button
           onClick={() => { setEditNote(null); setShowModal(true); }}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium"
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium shrink-0"
         >
           <Plus className="w-4 h-4" /> Tambah Catatan
         </button>
@@ -75,34 +75,34 @@ export default function WeeklyPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari catatan mingguan..."
-          className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-gray-400 dark:text-gray-500">
           <CalendarDays className="w-12 h-12 mx-auto mb-4 opacity-30" />
           <p className="text-base font-medium">{notes.length === 0 ? "Belum ada catatan mingguan" : "Tidak ada yang cocok"}</p>
           {notes.length === 0 && (
-            <button onClick={() => setShowModal(true)} className="mt-4 text-sm text-indigo-600 hover:underline">Buat catatan pertama</button>
+            <button onClick={() => setShowModal(true)} className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Buat catatan pertama</button>
           )}
         </div>
       ) : (
         <div className="space-y-8">
           {Object.entries(grouped).sort(([a], [b]) => Number(b) - Number(a)).map(([year, yearNotes]) => (
             <div key={year}>
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Tahun {year}</h2>
+              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Tahun {year}</h2>
               <div className="space-y-3">
                 {yearNotes.map((note) => (
                   <div key={note.id}>
                     {note.weekNumber && (
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-purple-100 text-purple-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                        <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold px-2.5 py-1 rounded-full">
                           Pekan {note.weekNumber}
                         </span>
-                        <span className="text-xs text-gray-400">{getWeekRange(note.weekNumber, note.year!)}</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500">{getWeekRange(note.weekNumber, note.year!)}</span>
                       </div>
                     )}
                     <NoteCard note={note} onEdit={(n) => { setEditNote(n as Note); setShowModal(true); }} onDelete={handleDelete} />

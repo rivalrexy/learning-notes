@@ -68,17 +68,17 @@ export default function DailyPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Calendar className="w-6 h-6 text-blue-600" />
             Catatan Harian
           </h1>
-          <p className="text-gray-500 mt-1">{notes.length} catatan tersimpan</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{notes.length} catatan tersimpan</p>
         </div>
         <button
           onClick={() => { setEditNote(null); setShowModal(true); }}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium"
+          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium shrink-0"
         >
           <Plus className="w-4 h-4" /> Tambah Catatan
         </button>
@@ -90,17 +90,17 @@ export default function DailyPage() {
           <input
             type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari catatan..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
         {allTags.length > 0 && (
           <div className="flex gap-2 flex-wrap">
-            <button onClick={() => setFilterTag("")} className={`px-3 py-2 rounded-lg text-xs font-medium border ${!filterTag ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+            <button onClick={() => setFilterTag("")} className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${!filterTag ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
               Semua
             </button>
             {allTags.map((tag) => (
               <button key={tag} onClick={() => setFilterTag(filterTag === tag ? "" : tag)}
-                className={`px-3 py-2 rounded-lg text-xs font-medium border ${filterTag === tag ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+                className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${filterTag === tag ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
                 {tag}
               </button>
             ))}
@@ -111,11 +111,11 @@ export default function DailyPage() {
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-gray-400 dark:text-gray-500">
           <Calendar className="w-12 h-12 mx-auto mb-4 opacity-30" />
           <p className="text-base font-medium">{notes.length === 0 ? "Belum ada catatan harian" : "Tidak ada yang cocok"}</p>
           {notes.length === 0 && (
-            <button onClick={() => setShowModal(true)} className="mt-4 text-sm text-indigo-600 hover:underline">
+            <button onClick={() => setShowModal(true)} className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
               Buat catatan pertama
             </button>
           )}
@@ -124,7 +124,7 @@ export default function DailyPage() {
         <div className="space-y-8">
           {Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([month, monthNotes]) => (
             <div key={month}>
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{formatMonth(month)}</h2>
+              <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{formatMonth(month)}</h2>
               <div className="grid md:grid-cols-2 gap-4">
                 {monthNotes.map((note) => (
                   <NoteCard key={note.id} note={note} onEdit={(n) => { setEditNote(n as Note); setShowModal(true); }} onDelete={handleDelete} />

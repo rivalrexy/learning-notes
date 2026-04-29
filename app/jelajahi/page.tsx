@@ -28,7 +28,6 @@ export default function JelajahiPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Build unique author list from loaded notes
   const authors = useMemo<Author[]>(() => {
     const map = new Map<string, string>();
     notes.forEach((n) => map.set(n.user.id, n.user.name));
@@ -55,16 +54,16 @@ export default function JelajahiPage() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Globe className="w-6 h-6 text-indigo-600" />
             Jelajahi Catatan
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
             Temukan catatan belajar publik dari komunitas
           </p>
         </div>
         {!loading && (
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-gray-400 dark:text-gray-500">
             {filtered.length} catatan ditemukan · {authors.length} pelajar
           </p>
         )}
@@ -72,7 +71,6 @@ export default function JelajahiPage() {
 
       {/* Filter bar */}
       <div className="flex flex-wrap gap-3">
-        {/* Search */}
         <div className="relative flex-1 min-w-52">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -80,7 +78,7 @@ export default function JelajahiPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari judul, isi, atau tag..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
@@ -91,7 +89,7 @@ export default function JelajahiPage() {
             className={`flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-lg border text-sm font-medium transition-colors ${
               filterUserId
                 ? "bg-indigo-600 text-white border-indigo-600"
-                : "border-gray-300 text-gray-600 hover:border-indigo-400 hover:bg-indigo-50"
+                : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
             }`}
           >
             <Users className="w-4 h-4 shrink-0" />
@@ -111,19 +109,19 @@ export default function JelajahiPage() {
           {showUserDropdown && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowUserDropdown(false)} />
-              <div className="absolute right-0 mt-1 w-56 bg-white rounded-xl border border-gray-200 shadow-lg z-20 py-1 max-h-60 overflow-y-auto">
+              <div className="absolute right-0 mt-1 w-56 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg z-20 py-1 max-h-60 overflow-y-auto">
                 <button
                   onClick={() => { setFilterUserId(""); setShowUserDropdown(false); }}
                   className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${
-                    !filterUserId ? "bg-indigo-50 text-indigo-700 font-medium" : "text-gray-600 hover:bg-gray-50"
+                    !filterUserId ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
                 >
                   <Globe className="w-4 h-4 shrink-0" />
                   Semua Pelajar
                 </button>
-                <div className="border-t border-gray-100 my-1" />
+                <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
                 {authors.length === 0 && (
-                  <p className="px-3 py-2 text-xs text-gray-400">Belum ada catatan publik</p>
+                  <p className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">Belum ada catatan publik</p>
                 )}
                 {authors.map((a) => {
                   const count = notes.filter((n) => n.user.id === a.id).length;
@@ -133,17 +131,17 @@ export default function JelajahiPage() {
                       onClick={() => { setFilterUserId(a.id); setShowUserDropdown(false); }}
                       className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition-colors ${
                         filterUserId === a.id
-                          ? "bg-indigo-50 text-indigo-700 font-medium"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                       }`}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-[10px] font-bold text-indigo-600 shrink-0">
+                        <div className="w-6 h-6 bg-indigo-100 dark:bg-indigo-800 rounded-full flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-300 shrink-0">
                           {a.name.charAt(0).toUpperCase()}
                         </div>
                         <span className="truncate">{a.name}</span>
                       </div>
-                      <span className="text-xs text-gray-400 shrink-0">{count} catatan</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">{count} catatan</span>
                     </button>
                   );
                 })}
@@ -153,25 +151,25 @@ export default function JelajahiPage() {
         </div>
       </div>
 
-      {/* Active filter chip */}
+      {/* Active filter chips */}
       {(filterUserId || search) && (
         <div className="flex flex-wrap gap-2 -mt-2">
           {filterUserId && selectedAuthor && (
-            <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-medium px-2.5 py-1 rounded-full border border-indigo-100">
-              <div className="w-4 h-4 bg-indigo-200 rounded-full flex items-center justify-center text-[8px] font-bold">
+            <span className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-medium px-2.5 py-1 rounded-full border border-indigo-100 dark:border-indigo-800">
+              <div className="w-4 h-4 bg-indigo-200 dark:bg-indigo-700 rounded-full flex items-center justify-center text-[8px] font-bold">
                 {selectedAuthor.name.charAt(0).toUpperCase()}
               </div>
               {selectedAuthor.name}
-              <button onClick={() => setFilterUserId("")} className="ml-0.5 hover:text-indigo-900">
+              <button onClick={() => setFilterUserId("")} className="ml-0.5 hover:text-indigo-900 dark:hover:text-indigo-100">
                 <X className="w-3 h-3" />
               </button>
             </span>
           )}
           {search && (
-            <span className="flex items-center gap-1.5 bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-1 rounded-full">
+            <span className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium px-2.5 py-1 rounded-full">
               <Search className="w-3 h-3" />
               &ldquo;{search}&rdquo;
-              <button onClick={() => setSearch("")} className="ml-0.5 hover:text-gray-900">
+              <button onClick={() => setSearch("")} className="ml-0.5 hover:text-gray-900 dark:hover:text-gray-100">
                 <X className="w-3 h-3" />
               </button>
             </span>
@@ -185,14 +183,14 @@ export default function JelajahiPage() {
           <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-24 text-gray-400">
+        <div className="text-center py-24 text-gray-400 dark:text-gray-500">
           <Globe className="w-12 h-12 mx-auto mb-4 opacity-25" />
           <p className="text-base font-medium">
             {notes.length === 0
               ? "Belum ada catatan publik"
               : "Tidak ada catatan yang cocok"}
           </p>
-          <p className="text-sm mt-1 text-gray-400">
+          <p className="text-sm mt-1 text-gray-400 dark:text-gray-500">
             {notes.length === 0
               ? "Jadilah yang pertama berbagi catatan belajarmu!"
               : "Coba ubah filter atau kata kunci pencarian."}

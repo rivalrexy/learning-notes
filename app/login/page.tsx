@@ -35,42 +35,42 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full max-w-md p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 transition-colors">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm w-full max-w-md p-8">
         <div className="flex items-center justify-center gap-2 mb-8">
           <BookOpen className="w-7 h-7 text-indigo-600" />
-          <span className="text-2xl font-bold text-gray-900">BelajarKu</span>
+          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">BelajarKu</span>
         </div>
 
-        <h1 className="text-xl font-semibold text-gray-900 text-center mb-1">Masuk ke akun</h1>
-        <p className="text-sm text-gray-500 text-center mb-6">Lanjutkan catatan belajarmu</p>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 text-center mb-1">Masuk ke akun</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">Lanjutkan catatan belajarmu</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="kamu@email.com"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg px-3 py-2">
               {error}
             </div>
           )}
@@ -85,9 +85,9 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-sm text-center text-gray-500 mt-6">
+        <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-6">
           Belum punya akun?{" "}
-          <Link href="/register" className="text-indigo-600 font-medium hover:underline">
+          <Link href="/register" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
             Daftar sekarang
           </Link>
         </p>

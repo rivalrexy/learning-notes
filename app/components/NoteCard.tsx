@@ -26,10 +26,10 @@ interface Props {
 }
 
 const srcPill: Record<string, string> = {
-  youtube: "bg-red-100 text-red-600",
-  book:    "bg-amber-100 text-amber-700",
-  article: "bg-blue-100 text-blue-600",
-  other:   "bg-gray-100 text-gray-500",
+  youtube: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+  book:    "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  article: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+  other:   "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400",
 };
 
 function SrcPillIcon({ type }: { type: string }) {
@@ -56,7 +56,7 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
     <>
       <div
         onClick={() => setShowPreview(true)}
-        className="group relative bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg hover:border-indigo-200 transition-all duration-200 cursor-pointer flex flex-col"
+        className="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-700 transition-all duration-200 cursor-pointer flex flex-col"
       >
         {/* Type colour bar */}
         <div className={`h-1 w-full shrink-0 ${barCls}`} />
@@ -66,22 +66,22 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
           {/* Title + actions row */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 text-[15px] leading-snug group-hover:text-indigo-700 transition-colors line-clamp-2">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-[15px] leading-snug group-hover:text-indigo-700 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
                 {note.title}
               </h3>
-              <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-gray-400">
+              <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-gray-400 dark:text-gray-500">
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" />
                   {formatDate(note.date)}
                 </div>
                 {note.type === "weekly" && note.weekNumber && (
-                  <span className="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-medium">
+                  <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full font-medium">
                     Pekan {note.weekNumber}
                   </span>
                 )}
                 {note.user && (
                   <div className="flex items-center gap-1">
-                    <div className="w-3.5 h-3.5 bg-indigo-100 rounded-full flex items-center justify-center text-[8px] font-bold text-indigo-600">
+                    <div className="w-3.5 h-3.5 bg-indigo-100 dark:bg-indigo-800 rounded-full flex items-center justify-center text-[8px] font-bold text-indigo-600 dark:text-indigo-300">
                       {note.user.name.charAt(0).toUpperCase()}
                     </div>
                     <span>{note.user.name}</span>
@@ -90,7 +90,7 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
               </div>
             </div>
 
-            {/* Action buttons — stop click from bubbling to card */}
+            {/* Action buttons */}
             {(onEdit || onDelete) && (
               <div className="flex gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                 <ShareButton
@@ -101,7 +101,7 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
                 {onEdit && (
                   <button
                     onClick={() => onEdit(note)}
-                    className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                    className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
@@ -109,7 +109,7 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
                 {onDelete && (
                   <button
                     onClick={() => onDelete(note.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -120,29 +120,29 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
 
           {/* Content preview with gradient fade */}
           <div className="relative overflow-hidden" style={{ maxHeight: "4.5rem" }}>
-            <div className="text-sm text-gray-500 leading-relaxed [&_p]:m-0 [&_h1]:text-sm [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:leading-normal [&_strong]:font-semibold [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:rounded [&_blockquote]:border-l-2 [&_blockquote]:border-gray-200 [&_blockquote]:pl-2 [&_blockquote]:text-gray-400">
+            <div className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed [&_p]:m-0 [&_h1]:text-sm [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-semibold [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:leading-normal [&_strong]:font-semibold [&_code]:bg-gray-100 dark:[&_code]:bg-gray-700 [&_code]:px-1 [&_code]:rounded [&_blockquote]:border-l-2 [&_blockquote]:border-gray-200 dark:[&_blockquote]:border-gray-600 [&_blockquote]:pl-2 [&_blockquote]:text-gray-400">
               <ReactMarkdown>{note.content}</ReactMarkdown>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-7 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-7 bg-gradient-to-t from-white dark:from-gray-800 to-transparent pointer-events-none" />
           </div>
 
           {/* Tags */}
           {note.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {note.tags.slice(0, 4).map((tag) => (
-                <span key={tag} className="flex items-center gap-0.5 bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full">
+                <span key={tag} className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full">
                   <Tag className="w-2.5 h-2.5" />{tag}
                 </span>
               ))}
               {note.tags.length > 4 && (
-                <span className="text-xs text-gray-400 self-center">+{note.tags.length - 4}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500 self-center">+{note.tags.length - 4}</span>
               )}
             </div>
           )}
 
-          {/* Sources — distinct pills per source type */}
+          {/* Sources */}
           {note.sources.length > 0 && (
-            <div className="border-t border-gray-100 pt-3">
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
               <div className="flex flex-wrap gap-1.5">
                 {note.sources.map((s) => {
                   const thumbnail = s.type === "youtube" && s.url ? getYouTubeThumbnail(s.url) : null;
@@ -172,7 +172,7 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
           )}
 
           {/* Preview hint */}
-          <div className="flex items-center gap-1 text-xs text-gray-300 group-hover:text-indigo-400 transition-colors mt-auto pt-1">
+          <div className="flex items-center gap-1 text-xs text-gray-300 dark:text-gray-600 group-hover:text-indigo-400 dark:group-hover:text-indigo-500 transition-colors mt-auto pt-1">
             <Eye className="w-3.5 h-3.5" />
             <span>Klik untuk lihat detail</span>
           </div>
