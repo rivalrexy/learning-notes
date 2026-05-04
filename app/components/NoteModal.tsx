@@ -7,7 +7,7 @@ import { getWeekNumber, getWeekStartDate, getYouTubeThumbnail, todayISO } from "
 import {
   X, Plus, Minus, Loader2, Check,
   Play, BookOpen, FileText, HelpCircle,
-  Upload, Eye, Pencil,
+  Upload,
 } from "lucide-react";
 import DatePicker from "@/app/components/DatePicker";
 import WeekPicker from "@/app/components/WeekPicker";
@@ -68,7 +68,6 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
     note?.sources?.map((s) => s.id) ?? []
   );
   const [saving, setSaving] = useState(false);
-  const [previewMode, setPreviewMode] = useState(false);
 
   const titleRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -196,7 +195,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[92vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[92vh] flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
@@ -245,44 +244,47 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
             )}
           </div>
 
-          {/* Isi Catatan */}
+          {/* Isi Catatan — split view: editor kiri, pratinjau kanan */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Isi Catatan</label>
-              <button
-                type="button"
-                onClick={() => setPreviewMode((v) => !v)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
-              >
-                {previewMode
-                  ? <><Pencil className="w-3 h-3" /> Tulis</>
-                  : <><Eye className="w-3 h-3" /> Pratinjau</>}
-              </button>
-            </div>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block">Isi Catatan</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
-            {previewMode ? (
-              <div className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 min-h-40 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:font-semibold [&_h3]:font-semibold [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5 [&_code]:bg-gray-200 dark:[&_code]:bg-gray-600 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-200 dark:[&_pre]:bg-gray-600 [&_pre]:p-2 [&_pre]:rounded-lg [&_blockquote]:border-l-4 [&_blockquote]:border-indigo-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_hr]:border-gray-200 dark:[&_hr]:border-gray-600 [&_strong]:font-semibold">
-                {content.trim()
-                  ? <ReactMarkdown>{content}</ReactMarkdown>
-                  : <p className="text-gray-400 italic">Belum ada konten...</p>}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+              {/* Editor */}
+              <div className="rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all flex flex-col">
                 <MarkdownToolbar textareaRef={textareaRef} value={content} onChange={setContent} />
                 <textarea
                   ref={textareaRef}
                   value={content}
-                  onChange={(e) => {
-                    setContent(e.target.value);
-                    autoResize(e.target);
-                  }}
-                  placeholder="Tuliskan apa yang kamu pelajari...&#10;&#10;Mendukung Markdown:&#10;**bold**, *italic*, ## heading, - list, > kutipan, `kode`"
+                  onChange={(e) => { setContent(e.target.value); autoResize(e.target); }}
+                  placeholder={"Tuliskan apa yang kamu pelajari...\n\n**bold**, *italic*, ## heading, - list, > kutipan, `kode`"}
                   rows={8}
-                  className="w-full px-4 py-3 text-sm text-gray-800 dark:text-gray-200 resize-none focus:outline-none bg-white dark:bg-gray-700 placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed min-h-40"
+                  className="flex-1 w-full px-4 py-3 text-sm text-gray-800 dark:text-gray-200 resize-none focus:outline-none bg-white dark:bg-gray-700 placeholder:text-gray-300 dark:placeholder:text-gray-600 leading-relaxed min-h-40"
                   style={{ height: "auto" }}
                 />
               </div>
-            )}
+
+              {/* Live preview */}
+              <div className="rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 flex flex-col min-h-40">
+                <div className="px-3 py-1.5 border-b border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 rounded-t-xl shrink-0">
+                  <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide">Pratinjau</span>
+                </div>
+                <div className="flex-1 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 overflow-y-auto
+                  [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mt-3 [&_h1]:mb-1
+                  [&_h2]:font-semibold [&_h2]:mt-2 [&_h2]:mb-1
+                  [&_h3]:font-semibold [&_h3]:mt-1.5 [&_h3]:mb-0.5
+                  [&_p]:my-1.5
+                  [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-0.5
+                  [&_code]:bg-gray-200 dark:[&_code]:bg-gray-600 [&_code]:px-1 [&_code]:rounded [&_code]:text-[0.8em]
+                  [&_pre]:bg-gray-200 dark:[&_pre]:bg-gray-600 [&_pre]:p-2 [&_pre]:rounded-lg [&_pre]:overflow-x-auto
+                  [&_blockquote]:border-l-4 [&_blockquote]:border-indigo-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500 [&_blockquote]:italic
+                  [&_hr]:border-gray-200 dark:[&_hr]:border-gray-600 [&_hr]:my-2
+                  [&_strong]:font-semibold [&_a]:text-indigo-600 [&_a]:underline">
+                  {content.trim()
+                    ? <ReactMarkdown>{content}</ReactMarkdown>
+                    : <p className="text-gray-400 dark:text-gray-500 italic text-xs">Pratinjau akan muncul di sini...</p>}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Tags */}
