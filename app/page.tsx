@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDate, getWeekRange } from "@/app/lib/utils";
-import { Calendar, CalendarDays, Library, BookOpen, TrendingUp, FileText, Flame, Zap } from "lucide-react";
+import { Calendar, CalendarDays, Library, BookOpen, TrendingUp, FileText, Flame, Zap, BarChart2, PieChart } from "lucide-react";
 
 interface Note {
   id: string; type: string; title: string; content: string;
@@ -64,6 +64,34 @@ const activityLegend = [
   "bg-green-600 dark:bg-green-400",
 ];
 
+function getMonthlyTrend(notes: Note[]) {
+  const today = new Date();
+  return Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(today.getFullYear(), today.getMonth() - (5 - i), 1);
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const monthKey = `${y}-${String(m + 1).padStart(2, "0")}`;
+    const daily = notes.filter((n) => n.type === "daily" && n.date.startsWith(monthKey)).length;
+    const weekly = notes.filter((n) => {
+      if (n.type !== "weekly" || !n.weekNumber || !n.year) return false;
+      const jan4 = new Date(n.year, 0, 4);
+      const dow = jan4.getDay() || 7;
+      const startOfWeek = new Date(n.year, 0, 4 - dow + 1 + (n.weekNumber - 1) * 7);
+      return startOfWeek.getFullYear() === y && startOfWeek.getMonth() === m;
+    }).length;
+    return { month: d.toLocaleString("id-ID", { month: "short" }), daily, weekly };
+  });
+}
+
+function getDayOfWeekCounts(dailyNotes: Note[]): number[] {
+  const counts = Array(7).fill(0);
+  dailyNotes.forEach((n) => {
+    const day = (new Date(n.date).getDay() + 6) % 7; // 0=Mon … 6=Sun
+    counts[day]++;
+  });
+  return counts;
+}
+
 export default function Dashboard() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
@@ -101,6 +129,21 @@ export default function Dashboard() {
   }, {});
   const topTags = Object.entries(tagCounts).sort(([, a], [, b]) => b - a).slice(0, 8);
 
+  const monthlyTrend = getMonthlyTrend(notes);
+  const maxMonthly = Math.max(...monthlyTrend.map((m) => m.daily + m.weekly), 1);
+
+  const sourceCounts: Record<string, number> = { youtube: 0, book: 0, article: 0, other: 0 };
+  sources.forEach((s) => { if (s.type in sourceCounts) sourceCounts[s.type]++; });
+  const sourceDistribution = [
+    { type: "youtube", label: "YouTube", count: sourceCounts.youtube, color: "text-red-600 dark:text-red-400", bar: "bg-red-400 dark:bg-red-500" },
+    { type: "book", label: "Buku", count: sourceCounts.book, color: "text-amber-600 dark:text-amber-400", bar: "bg-amber-400 dark:bg-amber-500" },
+    { type: "article", label: "Artikel", count: sourceCounts.article, color: "text-blue-600 dark:text-blue-400", bar: "bg-blue-400 dark:bg-blue-500" },
+    { type: "other", label: "Lainnya", count: sourceCounts.other, color: "text-gray-500 dark:text-gray-400", bar: "bg-gray-400 dark:bg-gray-500" },
+  ];
+
+  const dayOfWeekCounts = getDayOfWeekCounts(dailyNotes);
+  const maxDayCount = Math.max(...dayOfWeekCounts, 1);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-32">
@@ -127,6 +170,101 @@ export default function Dashboard() {
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{label}</div>
           </Link>
         ))}
+      </div>
+
+      {/* Charts row */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Monthly trend */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <BarChart2 className="w-4 h-4 text-indigo-600" />
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Tren Catatan 6 Bulan</h2>
+          </div>
+          <div className="flex items-end gap-2">
+            {monthlyTrend.map(({ month, daily, weekly }) => (
+              <div key={month} className="flex-1 flex flex-col items-center gap-1.5">
+                <div className="flex items-end gap-0.5 justify-center" style={{ height: "80px" }}>
+                  <div
+                    title={`Harian: ${daily}`}
+                    className="w-4 bg-blue-400 dark:bg-blue-500 rounded-t-sm transition-all"
+                    style={{ height: `${Math.max((daily / maxMonthly) * 80, daily > 0 ? 4 : 0)}px` }}
+                  />
+                  <div
+                    title={`Mingguan: ${weekly}`}
+                    className="w-4 bg-purple-400 dark:bg-purple-500 rounded-t-sm transition-all"
+                    style={{ height: `${Math.max((weekly / maxMonthly) * 80, weekly > 0 ? 4 : 0)}px` }}
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500">{month}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm bg-blue-400 dark:bg-blue-500" />
+              <span className="text-xs text-gray-500 dark:text-gray-400">Harian</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-sm bg-purple-400 dark:bg-purple-500" />
+              <span className="text-xs text-gray-500 dark:text-gray-400">Mingguan</span>
+            </div>
+            <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
+              Total: {notes.length} catatan
+            </span>
+          </div>
+        </div>
+
+        {/* Source distribution + Day of week */}
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <PieChart className="w-4 h-4 text-amber-600" />
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">Distribusi Sumber</h2>
+            </div>
+            {sources.length === 0 ? (
+              <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada sumber</p>
+            ) : (
+              <div className="space-y-3">
+                {sourceDistribution.map(({ type, label, count, color, bar }) => (
+                  <div key={type}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className={`font-medium ${color}`}>{label}</span>
+                      <span className="text-gray-400 dark:text-gray-500">
+                        {count} · {Math.round((count / sources.length) * 100)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${bar} rounded-full transition-all`}
+                        style={{ width: `${(count / sources.length) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Aktivitas per Hari</h2>
+            <div className="space-y-1.5">
+              {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((day, i) => (
+                <div key={day} className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-400 dark:text-gray-500 w-6 shrink-0">{day}</span>
+                  <div className="flex-1 h-3 bg-gray-100 dark:bg-gray-700 rounded-sm overflow-hidden">
+                    <div
+                      className="h-full bg-indigo-400 dark:bg-indigo-500 rounded-sm transition-all"
+                      style={{ width: `${(dayOfWeekCounts[i] / maxDayCount) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-[11px] text-gray-400 dark:text-gray-500 w-5 text-right shrink-0">
+                    {dayOfWeekCounts[i]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Streak + Activity */}
