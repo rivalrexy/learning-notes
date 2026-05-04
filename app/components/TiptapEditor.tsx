@@ -25,7 +25,8 @@ export default function TiptapEditor({ value, onChange, placeholder }: Props) {
     content: value,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      onChange(editor.storage.markdown.getMarkdown());
+      const md = (editor.storage as { markdown: { getMarkdown: () => string } }).markdown;
+      onChange(md.getMarkdown());
     },
     editorProps: {
       attributes: {
