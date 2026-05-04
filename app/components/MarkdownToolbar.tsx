@@ -1,6 +1,7 @@
 "use client";
 
 import { Bold, Italic, Hash, List, ListOrdered, Quote, Code, Minus } from "lucide-react";
+import EmojiPicker from "@/app/components/EmojiPicker";
 
 interface Props {
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
@@ -27,6 +28,21 @@ const tools: Tool[] = [
 ];
 
 export default function MarkdownToolbar({ textareaRef, value, onChange }: Props) {
+  const insertEmoji = (emoji: string) => {
+    const ta = textareaRef.current;
+    if (!ta) { onChange(value + emoji); return; }
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const newValue = value.slice(0, start) + emoji + value.slice(end);
+    onChange(newValue);
+    setTimeout(() => {
+      ta.focus();
+      ta.setSelectionRange(start + emoji.length, start + emoji.length);
+      ta.style.height = "auto";
+      ta.style.height = `${ta.scrollHeight}px`;
+    }, 0);
+  };
+
   const apply = (tool: WrapTool | PrefixTool) => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -80,6 +96,11 @@ export default function MarkdownToolbar({ textareaRef, value, onChange }: Props)
           </button>
         );
       })}
+      <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-1" />
+      <EmojiPicker
+        onSelect={insertEmoji}
+        className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-yellow-500 hover:bg-white dark:hover:bg-gray-600 rounded-md transition-colors"
+      />
     </div>
   );
 }
