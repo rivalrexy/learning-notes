@@ -19,3 +19,15 @@ body {
 .animate-fade-in {
   animation: fade-in 0.15s ease-out forwards;
 }
+
+/* Tiptap editor placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #d1d5db;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.dark .ProseMirror p.is-editor-empty:first-child::before {
+  color: #4b5563;
+}
