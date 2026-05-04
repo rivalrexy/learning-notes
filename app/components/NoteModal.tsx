@@ -6,7 +6,6 @@ import { getWeekNumber, getWeekStartDate, getYouTubeThumbnail, todayISO } from "
 import {
   X, Plus, Minus, Loader2, Check,
   Play, BookOpen, FileText, HelpCircle,
-  Upload,
 } from "lucide-react";
 import DatePicker from "@/app/components/DatePicker";
 import WeekPicker from "@/app/components/WeekPicker";
@@ -90,28 +89,18 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
   const [nsTitle, setNsTitle] = useState("");
   const [nsUrl, setNsUrl] = useState("");
   const [nsAuthor, setNsAuthor] = useState("");
-  const [nsCover, setNsCover] = useState<string | null>(null);
   const [savingNs, setSavingNs] = useState(false);
 
   const ytThumb = nsType === "youtube" && nsUrl ? getYouTubeThumbnail(nsUrl) : null;
 
   const resetNewSource = () => {
-    setNsTitle(""); setNsUrl(""); setNsAuthor(""); setNsCover(null); setNsType("youtube");
-  };
-
-  const handleCoverFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setNsCover((ev.target?.result as string) ?? null);
-    reader.readAsDataURL(file);
+    setNsTitle(""); setNsUrl(""); setNsAuthor(""); setNsType("youtube");
   };
 
   const saveNewSource = async () => {
     if (!nsTitle.trim()) return;
     setSavingNs(true);
-    const urlToSave =
-      nsType === "book" ? (nsCover ?? (nsUrl || null)) : nsUrl || null;
+    const urlToSave = nsUrl || null;
     try {
       const res = await fetch("/api/sources", {
         method: "POST",
@@ -293,7 +282,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                     <button
                       key={t}
                       type="button"
-                      onClick={() => { setNsType(t); setNsCover(null); setNsUrl(""); }}
+                      onClick={() => { setNsType(t); setNsUrl(""); }}
                       className={`py-1.5 rounded-lg text-xs font-medium border transition-all ${
                         nsType === t ? srcTypeColor[t] + " ring-1 ring-offset-1 ring-indigo-300" : "border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-gray-300 dark:hover:border-gray-500"
                       }`}
@@ -346,44 +335,15 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                   </div>
                 )}
 
-                {/* Book: cover upload + URL — stacked on mobile, side-by-side on sm+ */}
+                {/* Book: URL cover saja */}
                 {nsType === "book" && (
-                  <div className="space-y-2">
-                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                      <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg py-2.5 cursor-pointer hover:border-indigo-400 hover:bg-white dark:hover:bg-gray-600 transition-colors sm:flex-1">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleCoverFile}
-                          className="sr-only"
-                        />
-                        <Upload className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">Upload cover</span>
-                      </label>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 text-center">atau</span>
-                      <input
-                        type="url"
-                        value={nsUrl}
-                        onChange={(e) => { setNsUrl(e.target.value); setNsCover(null); }}
-                        placeholder="URL gambar cover..."
-                        className="w-full sm:flex-1 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
-                    </div>
-                    {(nsCover ?? nsUrl) && (
-                      <div className="flex items-center gap-3 p-2 bg-white dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
-                        <img
-                          src={nsCover ?? nsUrl}
-                          alt="Cover"
-                          className="w-14 h-20 object-cover rounded border border-gray-100 dark:border-gray-600 shrink-0"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          <p className="font-medium text-gray-700 dark:text-gray-200">{nsTitle || "Judul buku"}</p>
-                          {nsAuthor && <p className="mt-0.5">{nsAuthor}</p>}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <input
+                    type="url"
+                    value={nsUrl}
+                    onChange={(e) => setNsUrl(e.target.value)}
+                    placeholder="URL cover buku (opsional)..."
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
                 )}
 
                 {/* Form actions */}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { LearningSource, SourceType } from "@/app/types";
-import { X, Upload } from "lucide-react";
+import { X } from "lucide-react";
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -26,21 +26,12 @@ export default function SourceModal({ source, onSave, onClose }: Props) {
   const [title, setTitle] = useState(source?.title ?? "");
   const [author, setAuthor] = useState(source?.author ?? "");
   const [url, setUrl] = useState(source?.url ?? "");
-  const [cover, setCover] = useState<string | null>(null);
   const [description, setDescription] = useState(source?.description ?? "");
-
-  const handleCoverFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => { setCover((ev.target?.result as string) ?? null); setUrl(""); };
-    reader.readAsDataURL(file);
-  };
 
   const handleSave = () => {
     if (!title.trim()) return;
     const now = new Date().toISOString();
-    const finalUrl = type === "book" ? ((cover ?? url.trim()) || undefined) : (url.trim() || undefined);
+    const finalUrl = url.trim() || undefined;
     onSave({
       id: source?.id ?? generateId(),
       type,
@@ -124,37 +115,15 @@ export default function SourceModal({ source, onSave, onClose }: Props) {
           )}
 
           {type === "book" && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Cover Buku (opsional)</label>
-              <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                <label className="flex items-center justify-center gap-2 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg py-2.5 cursor-pointer hover:border-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors sm:flex-1">
-                  <input type="file" accept="image/*" onChange={handleCoverFile} className="sr-only" />
-                  <Upload className="w-4 h-4 text-gray-400" />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Upload gambar</span>
-                </label>
-                <span className="text-xs text-gray-400 dark:text-gray-500 text-center">atau</span>
-                <input
-                  type="url"
-                  value={url}
-                  onChange={(e) => { setUrl(e.target.value); setCover(null); }}
-                  placeholder="URL gambar cover..."
-                  className="w-full sm:flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-              {(cover ?? url.trim()) && (
-                <div className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
-                  <img
-                    src={cover ?? url}
-                    alt="Cover"
-                    className="w-14 h-20 object-cover rounded border border-gray-100 dark:border-gray-600 shrink-0"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                  />
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    <p className="font-medium text-gray-700 dark:text-gray-200">{title || "Judul buku"}</p>
-                    {author && <p className="mt-0.5">{author}</p>}
-                  </div>
-                </div>
-              )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL Cover Buku (opsional)</label>
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://... (URL gambar cover)"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
             </div>
           )}
 
