@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LearningSource, SourceType } from "@/app/types";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -21,23 +21,51 @@ const sourceTypes: { value: SourceType; label: string; color: string }[] = [
   { value: "other", label: "Lainnya", color: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600" },
 ];
 
+const inputCls = "w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent";
+
 export default function SourceModal({ source, onSave, onClose }: Props) {
   const [type, setType] = useState<SourceType>(source?.type ?? "youtube");
   const [title, setTitle] = useState(source?.title ?? "");
   const [author, setAuthor] = useState(source?.author ?? "");
   const [url, setUrl] = useState(source?.url ?? "");
   const [description, setDescription] = useState(source?.description ?? "");
+  const [fetching, setFetching] = useState(false);
+  const lastFetchedUrl = useRef("");
+
+  useEffect(() => {
+    if (type !== "youtube" || !url.trim()) return;
+    if (url === lastFetchedUrl.current) return;
+    const timer = setTimeout(async () => {
+      setFetching(true);
+      try {
+        const res = await fetch(
+          `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          lastFetchedUrl.current = url;
+          setTitle((prev) => (prev.trim() ? prev : (data.title ?? "")));
+          setAuthor((prev) => (prev.trim() ? prev : (data.author_name ?? "")));
+        }
+      } catch { /* ignore */ }
+      setFetching(false);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [url, type]);
+
+  const isYoutube = type === "youtube";
+  const canSave = isYoutube ? url.trim() : title.trim();
 
   const handleSave = () => {
-    if (!title.trim()) return;
+    const finalTitle = title.trim() || (isYoutube ? url.trim() : "");
+    if (!finalTitle) return;
     const now = new Date().toISOString();
-    const finalUrl = url.trim() || undefined;
     onSave({
       id: source?.id ?? generateId(),
       type,
-      title: title.trim(),
+      title: finalTitle,
       author: author.trim() || undefined,
-      url: finalUrl,
+      url: url.trim() || undefined,
       description: description.trim() || undefined,
       createdAt: source?.createdAt ?? now,
     });
@@ -56,6 +84,7 @@ export default function SourceModal({ source, onSave, onClose }: Props) {
         </div>
 
         <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
+          {/* Type selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Jenis Sumber</label>
             <div className="grid grid-cols-4 gap-2">
@@ -75,45 +104,79 @@ export default function SourceModal({ source, onSave, onClose }: Props) {
             </div>
           </div>
 
+          {/* YouTube URL — shown first so auto-fill can populate title */}
+          {isYoutube && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                URL YouTube <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://youtube.com/watch?v=..."
+                className={inputCls}
+              />
+            </div>
+          )}
+
+          {/* Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Judul <span className="text-red-500">*</span>
+              Judul{!isYoutube && <span className="text-red-500"> *</span>}
+              {isYoutube && (
+                <span className="ml-1.5 text-xs font-normal text-gray-400 dark:text-gray-500">
+                  (opsional — otomatis dari YouTube)
+                </span>
+              )}
             </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={type === "youtube" ? "Judul video..." : type === "book" ? "Judul buku..." : "Judul..."}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={
+                  isYoutube
+                    ? fetching ? "Mengambil judul..." : "Otomatis dari YouTube..."
+                    : type === "book" ? "Judul buku..." : "Judul..."
+                }
+                className={inputCls + (fetching ? " pr-9" : "")}
+              />
+              {fetching && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-indigo-400" />
+              )}
+            </div>
           </div>
 
+          {/* Author */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              {type === "youtube" ? "Channel / Pembuat" : "Penulis / Pengarang"}
+              {isYoutube ? "Channel / Pembuat" : "Penulis / Pengarang"}
             </label>
             <input
               type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              placeholder={type === "youtube" ? "Nama channel..." : "Nama penulis..."}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder={isYoutube ? "Nama channel..." : "Nama penulis..."}
+              className={inputCls}
             />
           </div>
 
-          {(type === "youtube" || type === "article") && (
+          {/* URL for article/other */}
+          {(type === "article" || type === "other") && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL / Link</label>
               <input
                 type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder={type === "youtube" ? "https://youtube.com/watch?v=..." : "https://..."}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="https://..."
+                className={inputCls}
               />
             </div>
           )}
 
+          {/* Book cover URL */}
           {type === "book" && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">URL Cover Buku (opsional)</label>
@@ -122,11 +185,12 @@ export default function SourceModal({ source, onSave, onClose }: Props) {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://... (URL gambar cover)"
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className={inputCls}
               />
             </div>
           )}
 
+          {/* Description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deskripsi / Catatan</label>
             <textarea
@@ -134,7 +198,7 @@ export default function SourceModal({ source, onSave, onClose }: Props) {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Catatan singkat tentang sumber ini..."
               rows={3}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              className={inputCls + " resize-none"}
             />
           </div>
         </div>
@@ -148,7 +212,7 @@ export default function SourceModal({ source, onSave, onClose }: Props) {
           </button>
           <button
             onClick={handleSave}
-            disabled={!title.trim()}
+            disabled={!canSave}
             className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
           >
             Simpan
