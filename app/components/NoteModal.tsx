@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { NoteType } from "@/app/types";
 import { getWeekNumber, getWeekStartDate, getYouTubeThumbnail, todayISO } from "@/app/lib/utils";
 import {
@@ -90,15 +90,39 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
   const [nsUrl, setNsUrl] = useState("");
   const [nsAuthor, setNsAuthor] = useState("");
   const [savingNs, setSavingNs] = useState(false);
+  const [nsFetching, setNsFetching] = useState(false);
+  const lastFetchedNsUrl = useRef("");
 
   const ytThumb = nsType === "youtube" && nsUrl ? getYouTubeThumbnail(nsUrl) : null;
+
+  useEffect(() => {
+    if (nsType !== "youtube" || !nsUrl.trim()) return;
+    if (nsUrl === lastFetchedNsUrl.current) return;
+    const timer = setTimeout(async () => {
+      setNsFetching(true);
+      try {
+        const res = await fetch(
+          `https://www.youtube.com/oembed?url=${encodeURIComponent(nsUrl)}&format=json`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          lastFetchedNsUrl.current = nsUrl;
+          setNsTitle((prev) => (prev.trim() ? prev : (data.title ?? "")));
+          setNsAuthor((prev) => (prev.trim() ? prev : (data.author_name ?? "")));
+        }
+      } catch { /* ignore */ }
+      setNsFetching(false);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [nsUrl, nsType]);
 
   const resetNewSource = () => {
     setNsTitle(""); setNsUrl(""); setNsAuthor(""); setNsType("youtube");
   };
 
   const saveNewSource = async () => {
-    if (!nsTitle.trim()) return;
+    const finalNsTitle = nsTitle.trim() || (nsType === "youtube" ? nsUrl.trim() : "");
+    if (!finalNsTitle) return;
     setSavingNs(true);
     const urlToSave = nsUrl || null;
     try {
@@ -107,7 +131,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: nsType,
-          title: nsTitle.trim(),
+          title: finalNsTitle,
           author: nsAuthor.trim() || null,
           url: urlToSave,
         }),
@@ -292,34 +316,14 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                   ))}
                 </div>
 
-                {/* Title */}
-                <input
-                  type="text"
-                  value={nsTitle}
-                  onChange={(e) => setNsTitle(e.target.value)}
-                  placeholder={nsType === "youtube" ? "Judul video..." : nsType === "book" ? "Judul buku..." : "Judul..."}
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-
-                {/* Author */}
-                {(nsType === "youtube" || nsType === "book") && (
-                  <input
-                    type="text"
-                    value={nsAuthor}
-                    onChange={(e) => setNsAuthor(e.target.value)}
-                    placeholder={nsType === "youtube" ? "Nama channel..." : "Nama penulis..."}
-                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                )}
-
-                {/* YouTube / Article: URL + live thumbnail */}
-                {(nsType === "youtube" || nsType === "article") && (
+                {/* YouTube URL first so auto-fill can populate title */}
+                {nsType === "youtube" && (
                   <div className="space-y-2">
                     <input
                       type="url"
                       value={nsUrl}
                       onChange={(e) => setNsUrl(e.target.value)}
-                      placeholder={nsType === "youtube" ? "https://youtube.com/watch?v=..." : "https://..."}
+                      placeholder="https://youtube.com/watch?v=..."
                       className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                     {ytThumb && (
@@ -333,6 +337,46 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Title */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={nsTitle}
+                    onChange={(e) => setNsTitle(e.target.value)}
+                    placeholder={
+                      nsType === "youtube"
+                        ? nsFetching ? "Mengambil judul..." : "Otomatis dari YouTube..."
+                        : nsType === "book" ? "Judul buku..." : "Judul..."
+                    }
+                    className={"w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" + (nsFetching ? " pr-9" : "")}
+                  />
+                  {nsFetching && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-indigo-400" />
+                  )}
+                </div>
+
+                {/* Author */}
+                {(nsType === "youtube" || nsType === "book") && (
+                  <input
+                    type="text"
+                    value={nsAuthor}
+                    onChange={(e) => setNsAuthor(e.target.value)}
+                    placeholder={nsType === "youtube" ? "Nama channel..." : "Nama penulis..."}
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                )}
+
+                {/* Article URL */}
+                {nsType === "article" && (
+                  <input
+                    type="url"
+                    value={nsUrl}
+                    onChange={(e) => setNsUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
                 )}
 
                 {/* Book: URL cover saja */}
@@ -358,7 +402,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                   <button
                     type="button"
                     onClick={saveNewSource}
-                    disabled={!nsTitle.trim() || savingNs}
+                    disabled={(nsType === "youtube" ? !nsUrl.trim() : !nsTitle.trim()) || savingNs}
                     className="flex-1 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
                   >
                     {savingNs && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
