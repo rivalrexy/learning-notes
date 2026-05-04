@@ -140,15 +140,26 @@ export default function SourcesPage() {
           {filtered.map((source) => {
             const { icon: Icon, color, bg, label } = typeConfig[source.type];
             const ytThumb = source.type === "youtube" && source.url ? getYouTubeThumbnail(source.url) : null;
+            const bookCover = source.type === "book" && source.url ? source.url : null;
+            const thumbnail = ytThumb ?? bookCover;
             return (
               <div key={source.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
-                {ytThumb ? (
+                {thumbnail ? (
                   <div className="relative h-36 bg-gray-100 dark:bg-gray-700">
-                    <img src={ytThumb} alt={source.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/10" />
-                    <div className="absolute top-2 left-2">
-                      <span className="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">YT</span>
-                    </div>
+                    <img
+                      src={thumbnail}
+                      alt={source.title}
+                      className={`w-full h-full ${bookCover ? "object-contain bg-gray-50 dark:bg-gray-700" : "object-cover"}`}
+                      onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }}
+                    />
+                    {ytThumb && (
+                      <>
+                        <div className="absolute inset-0 bg-black/10" />
+                        <div className="absolute top-2 left-2">
+                          <span className="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">YT</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className={`h-12 ${bg} flex items-center px-5`}>

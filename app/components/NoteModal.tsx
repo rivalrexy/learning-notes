@@ -12,6 +12,7 @@ import {
 import DatePicker from "@/app/components/DatePicker";
 import WeekPicker from "@/app/components/WeekPicker";
 import MarkdownToolbar from "@/app/components/MarkdownToolbar";
+import EmojiPicker from "@/app/components/EmojiPicker";
 
 type SrcType = "youtube" | "book" | "article" | "other";
 
@@ -69,7 +70,22 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
 
+  const titleRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertTitleEmoji = (emoji: string) => {
+    const input = titleRef.current;
+    if (!input) { setTitle((t) => t + emoji); return; }
+    const start = input.selectionStart ?? title.length;
+    const end = input.selectionEnd ?? title.length;
+    const newTitle = title.slice(0, start) + emoji + title.slice(end);
+    setTitle(newTitle);
+    setTimeout(() => {
+      input.focus();
+      input.setSelectionRange(start + emoji.length, start + emoji.length);
+    }, 0);
+  };
+
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
@@ -198,13 +214,19 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
           {/* Judul */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Judul</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Judul catatan..."
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-600 transition-colors"
-            />
+            <div className="relative flex items-center">
+              <input
+                ref={titleRef}
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Judul catatan..."
+                className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 pr-10 text-sm bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white dark:focus:bg-gray-600 transition-colors"
+              />
+              <div className="absolute right-2">
+                <EmojiPicker onSelect={insertTitleEmoji} />
+              </div>
+            </div>
           </div>
 
           {/* Date / Week */}

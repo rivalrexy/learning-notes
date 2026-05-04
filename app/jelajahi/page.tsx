@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import NoteCard from "@/app/components/NoteCard";
-import { Globe, Search, Loader2, Users, ChevronDown, X } from "lucide-react";
+import { Globe, Search, Loader2, Users, ChevronDown, X, AlertCircle } from "lucide-react";
 
 interface NoteSource { id: string; title: string; type: string; url?: string | null; }
 interface Author { id: string; name: string; }
@@ -17,26 +17,32 @@ interface Note {
 export default function JelajahiPage() {
   const [notes, setNotes]   = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch]   = useState("");
   const [filterUserId, setFilterUserId] = useState<string>("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   useEffect(() => {
+    setError(null);
     fetch("/api/explore")
-      .then((r) => r.json())
-      .then((data) => { setNotes(Array.isArray(data) ? data : []); })
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) throw new Error(data?.error ?? "Gagal memuat catatan");
+        setNotes(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => setError(err.message ?? "Terjadi kesalahan"))
       .finally(() => setLoading(false));
   }, []);
 
   const authors = useMemo<Author[]>(() => {
     const map = new Map<string, string>();
-    notes.forEach((n) => map.set(n.user.id, n.user.name));
+    notes.forEach((n) => { if (n.user) map.set(n.user.id, n.user.name); });
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [notes]);
 
   const filtered = useMemo(() => {
     return notes.filter((n) => {
-      const matchUser = !filterUserId || n.user.id === filterUserId;
+      const matchUser = !filterUserId || n.user?.id === filterUserId;
       const q = search.toLowerCase();
       const matchSearch = !q
         || n.title.toLowerCase().includes(q)
@@ -181,6 +187,17 @@ export default function JelajahiPage() {
       {loading ? (
         <div className="flex justify-center py-24">
           <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center py-24 text-center gap-3">
+          <AlertCircle className="w-10 h-10 text-red-400" />
+          <p className="text-red-500 dark:text-red-400 font-medium">{error}</p>
+          <button
+            onClick={() => { setLoading(true); setError(null); fetch("/api/explore").then(async (r) => { const data = await r.json(); if (!r.ok) throw new Error(data?.error ?? "Gagal memuat catatan"); setNotes(Array.isArray(data) ? data : []); }).catch((err) => setError(err.message ?? "Terjadi kesalahan")).finally(() => setLoading(false)); }}
+            className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
+            Coba lagi
+          </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-24 text-gray-400 dark:text-gray-500">
