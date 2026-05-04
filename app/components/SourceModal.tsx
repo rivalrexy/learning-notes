@@ -40,7 +40,7 @@ export default function SourceModal({ source, onSave, onClose }: Props) {
   const handleSave = () => {
     if (!title.trim()) return;
     const now = new Date().toISOString();
-    const finalUrl = type === "book" ? (cover ?? url.trim() || undefined) : (url.trim() || undefined);
+    const finalUrl = type === "book" ? ((cover ?? url.trim()) || undefined) : (url.trim() || undefined);
     onSave({
       id: source?.id ?? generateId(),
       type,
