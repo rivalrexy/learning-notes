@@ -25,7 +25,8 @@ export default function TiptapEditor({ value, onChange, placeholder }: Props) {
     content: value,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      const md = (editor.storage as { markdown: { getMarkdown: () => string } }).markdown;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const md = (editor.storage as unknown as { markdown: { getMarkdown: () => string } }).markdown;
       onChange(md.getMarkdown());
     },
     editorProps: {
