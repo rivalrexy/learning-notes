@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
-import { Bold, Italic, Hash, List, ListOrdered, Quote, Code, Minus } from "lucide-react";
+import { Bold, Italic, Hash, List, ListOrdered, Quote, Code, Minus, ListIndentIncrease, ListIndentDecrease } from "lucide-react";
 import EmojiPicker from "@/app/components/EmojiPicker";
 
 interface Props {
@@ -68,6 +68,12 @@ export default function TiptapEditor({ value, onChange, placeholder }: Props) {
         <button type="button" title="Numbered list" onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleOrderedList().run(); }} className={toolBtn(isActive("orderedList"))}>
           <ListOrdered className="w-3.5 h-3.5" />
         </button>
+        <button type="button" title="Indent (Tab)" onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().sinkListItem("listItem").run(); }} className={toolBtn(false)}>
+          <ListIndentIncrease className="w-3.5 h-3.5" />
+        </button>
+        <button type="button" title="Outdent (Shift+Tab)" onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().liftListItem("listItem").run(); }} className={toolBtn(false)}>
+          <ListIndentDecrease className="w-3.5 h-3.5" />
+        </button>
         <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-1" />
         <button type="button" title="Blockquote" onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleBlockquote().run(); }} className={toolBtn(isActive("blockquote"))}>
           <Quote className="w-3.5 h-3.5" />
@@ -96,6 +102,11 @@ export default function TiptapEditor({ value, onChange, placeholder }: Props) {
         [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-5
         [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-5
         [&_.ProseMirror_li]:my-0.5
+        [&_.ProseMirror_ul_ul]:list-[circle] [&_.ProseMirror_ul_ul]:pl-5 [&_.ProseMirror_ul_ul]:mt-0.5
+        [&_.ProseMirror_ul_ul_ul]:list-[square] [&_.ProseMirror_ul_ul_ul]:pl-5 [&_.ProseMirror_ul_ul_ul]:mt-0.5
+        [&_.ProseMirror_ol_ol]:list-[lower-alpha] [&_.ProseMirror_ol_ol]:pl-5 [&_.ProseMirror_ol_ol]:mt-0.5
+        [&_.ProseMirror_ol_ol_ol]:list-[lower-roman] [&_.ProseMirror_ol_ol_ol]:pl-5 [&_.ProseMirror_ol_ol_ol]:mt-0.5
+        [&_.ProseMirror_li_p]:my-0
         [&_.ProseMirror_code]:bg-gray-100 dark:[&_.ProseMirror_code]:bg-gray-600 [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:rounded [&_.ProseMirror_code]:text-[0.85em] [&_.ProseMirror_code]:font-mono
         [&_.ProseMirror_pre]:bg-gray-900 [&_.ProseMirror_pre]:text-gray-100 [&_.ProseMirror_pre]:p-3 [&_.ProseMirror_pre]:rounded-lg [&_.ProseMirror_pre]:my-2 [&_.ProseMirror_pre]:text-sm [&_.ProseMirror_pre]:overflow-x-auto
         [&_.ProseMirror_pre_code]:bg-transparent [&_.ProseMirror_pre_code]:text-inherit [&_.ProseMirror_pre_code]:p-0
