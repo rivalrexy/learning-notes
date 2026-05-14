@@ -2,17 +2,21 @@
 
 import { useEffect, useState, useMemo } from "react";
 import NoteCard from "@/app/components/NoteCard";
-import { Globe, Search, Loader2, Users, ChevronDown, X, AlertCircle } from "lucide-react";
+import { Globe, Search, Loader2, Users, ChevronDown, X, AlertCircle, LayoutGrid, List } from "lucide-react";
+import { CATEGORY_COLOR } from "@/app/lib/categories";
+import { formatDate } from "@/app/lib/utils";
 
 interface NoteSource { id: string; title: string; type: string; url?: string | null; }
 interface Author { id: string; name: string; }
 interface Note {
   id: string; type: string; title: string; content: string;
   date: string; weekNumber?: number; year?: number;
-  tags: string[]; sources: NoteSource[];
+  tags: string[]; category?: string; sources: NoteSource[];
   isPublic: boolean; shareToken?: string | null;
   user: Author;
 }
+
+type ViewMode = "card" | "table";
 
 export default function JelajahiPage() {
   const [notes, setNotes]   = useState<Note[]>([]);
@@ -21,6 +25,12 @@ export default function JelajahiPage() {
   const [search, setSearch]   = useState("");
   const [filterUserId, setFilterUserId] = useState<string>("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== "undefined") return (localStorage.getItem("jelajahi-view") as ViewMode) ?? "card";
+    return "card";
+  });
+
+  const setView = (v: ViewMode) => { setViewMode(v); localStorage.setItem("jelajahi-view", v); };
 
   useEffect(() => {
     setError(null);
@@ -76,7 +86,7 @@ export default function JelajahiPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-52">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -155,6 +165,16 @@ export default function JelajahiPage() {
             </>
           )}
         </div>
+
+        {/* View toggle */}
+        <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden shrink-0">
+          <button onClick={() => setView("card")}
+            className={`p-2 transition-colors ${viewMode === "card" ? "bg-indigo-600 text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+            title="Tampilan kartu"><LayoutGrid className="w-4 h-4" /></button>
+          <button onClick={() => setView("table")}
+            className={`p-2 transition-colors ${viewMode === "table" ? "bg-indigo-600 text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+            title="Tampilan tabel"><List className="w-4 h-4" /></button>
+        </div>
       </div>
 
       {/* Active filter chips */}
@@ -213,11 +233,61 @@ export default function JelajahiPage() {
               : "Coba ubah filter atau kata kunci pencarian."}
           </p>
         </div>
-      ) : (
+      ) : viewMode === "card" ? (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((note) => (
             <NoteCard key={note.id} note={note} />
           ))}
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">Kategori</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Judul</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-28 hidden sm:table-cell">Tanggal</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">Pelajar</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden lg:table-cell">Tags</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {filtered.map((note) => {
+                const cat = note.category || "Lainnya";
+                const c = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
+                return (
+                  <tr key={note.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{cat}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{note.title}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 mt-0.5">{note.content.replace(/[#*`>_]/g, "").slice(0, 80)}</p>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap hidden sm:table-cell">{formatDate(note.date)}</td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {note.user && (
+                        <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                          <div className="w-5 h-5 bg-indigo-100 dark:bg-indigo-800 rounded-full flex items-center justify-center text-[9px] font-bold text-indigo-600 dark:text-indigo-300 shrink-0">
+                            {note.user.name.charAt(0).toUpperCase()}
+                          </div>
+                          {note.user.name}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <div className="flex gap-1 flex-wrap">
+                        {note.tags.slice(0, 2).map((t) => (
+                          <span key={t} className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full">#{t}</span>
+                        ))}
+                        {note.tags.length > 2 && <span className="text-xs text-gray-400">+{note.tags.length - 2}</span>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

@@ -3,16 +3,20 @@
 import { useEffect, useState } from "react";
 import NoteCard from "@/app/components/NoteCard";
 import NoteModal from "@/app/components/NoteModal";
-import { getWeekRange } from "@/app/lib/utils";
-import { Plus, CalendarDays, Search, Loader2 } from "lucide-react";
+import NotePreviewModal from "@/app/components/NotePreviewModal";
+import { formatDate, getWeekRange } from "@/app/lib/utils";
+import { CATEGORY_COLOR } from "@/app/lib/categories";
+import { Plus, CalendarDays, Search, Loader2, LayoutGrid, List, Pencil, Trash2 } from "lucide-react";
 
 interface Source { id: string; title: string; type: string; url?: string; }
 interface Note {
   id: string; type: "weekly"; title: string; content: string;
   date: string; weekNumber?: number; year?: number;
-  tags: string[]; sources: Source[];
+  tags: string[]; category: string; sources: Source[];
   isPublic?: boolean; shareToken?: string | null;
 }
+
+type ViewMode = "card" | "table";
 
 export default function WeeklyPage() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -20,7 +24,13 @@ export default function WeeklyPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editNote, setEditNote] = useState<Note | null>(null);
+  const [previewNote, setPreviewNote] = useState<Note | null>(null);
   const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== "undefined") return (localStorage.getItem("weekly-view") as ViewMode) ?? "card";
+    return "card";
+  });
 
   const load = async () => {
     const [n, s] = await Promise.all([
@@ -34,17 +44,25 @@ export default function WeeklyPage() {
 
   useEffect(() => { load(); }, []);
 
-  const handleSave = () => { setShowModal(false); setEditNote(null); load(); };
+  const setView = (v: ViewMode) => {
+    setViewMode(v);
+    localStorage.setItem("weekly-view", v);
+  };
 
+  const handleSave = () => { setShowModal(false); setEditNote(null); load(); };
   const handleDelete = async (id: string) => {
     if (!confirm("Hapus catatan ini?")) return;
     await fetch(`/api/notes/${id}`, { method: "DELETE" });
     load();
   };
 
-  const filtered = notes.filter((n) =>
-    !search || n.title.toLowerCase().includes(search.toLowerCase()) || n.content.toLowerCase().includes(search.toLowerCase())
-  );
+  const usedCategories = [...new Set(notes.map((n) => n.category).filter(Boolean))];
+
+  const filtered = notes.filter((n) => {
+    const matchSearch = !search || n.title.toLowerCase().includes(search.toLowerCase()) || n.content.toLowerCase().includes(search.toLowerCase());
+    const matchCat = !filterCategory || n.category === filterCategory;
+    return matchSearch && matchCat;
+  });
 
   const grouped = filtered.reduce<Record<string, Note[]>>((acc, note) => {
     const key = String(note.year ?? "");
@@ -71,13 +89,42 @@ export default function WeeklyPage() {
         </button>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cari catatan mingguan..."
-          className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
+      {/* Search + View Toggle */}
+      <div className="flex gap-3 flex-wrap items-center">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari catatan mingguan..."
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+        <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden shrink-0">
+          <button onClick={() => setView("card")}
+            className={`p-2 transition-colors ${viewMode === "card" ? "bg-indigo-600 text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+            title="Tampilan kartu"><LayoutGrid className="w-4 h-4" /></button>
+          <button onClick={() => setView("table")}
+            className={`p-2 transition-colors ${viewMode === "table" ? "bg-indigo-600 text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+            title="Tampilan tabel"><List className="w-4 h-4" /></button>
+        </div>
       </div>
+
+      {/* Category filter */}
+      {usedCategories.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setFilterCategory("")} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${!filterCategory ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+            Semua Kategori
+          </button>
+          {usedCategories.map((cat) => {
+            const c = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
+            return (
+              <button key={cat} onClick={() => setFilterCategory(filterCategory === cat ? "" : cat)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${filterCategory === cat ? `${c.bg} ${c.text} border-current` : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>
@@ -89,7 +136,7 @@ export default function WeeklyPage() {
             <button onClick={() => setShowModal(true)} className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Buat catatan pertama</button>
           )}
         </div>
-      ) : (
+      ) : viewMode === "card" ? (
         <div className="space-y-8">
           {Object.entries(grouped).sort(([a], [b]) => Number(b) - Number(a)).map(([year, yearNotes]) => (
             <div key={year}>
@@ -112,12 +159,78 @@ export default function WeeklyPage() {
             </div>
           ))}
         </div>
+      ) : (
+        /* Table view */
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">Kategori</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Judul</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-28 hidden sm:table-cell">Pekan</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">Tags</th>
+                <th className="w-20" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {filtered.map((note) => {
+                const c = CATEGORY_COLOR[note.category] ?? CATEGORY_COLOR["Lainnya"];
+                return (
+                  <tr key={note.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors cursor-pointer" onClick={() => setPreviewNote(note)}>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{note.category || "Lainnya"}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{note.title}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 mt-0.5">{note.content.replace(/[#*`>_]/g, "").slice(0, 80)}</p>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                      {note.weekNumber ? (
+                        <div>
+                          <div className="font-medium">Pekan {note.weekNumber}</div>
+                          <div className="text-gray-400">{getWeekRange(note.weekNumber, note.year!)}</div>
+                        </div>
+                      ) : formatDate(note.date)}
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <div className="flex gap-1 flex-wrap">
+                        {note.tags.slice(0, 2).map((t) => (
+                          <span key={t} className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full">#{t}</span>
+                        ))}
+                        {note.tags.length > 2 && <span className="text-xs text-gray-400">+{note.tags.length - 2}</span>}
+                      </div>
+                    </td>
+                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex gap-1 justify-end">
+                        <button onClick={() => { setEditNote(note); setShowModal(true); }} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(note.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {showModal && (
         <NoteModal
           type="weekly" note={editNote as never} sources={sources}
           onSave={handleSave} onClose={() => { setShowModal(false); setEditNote(null); }}
+        />
+      )}
+      {previewNote && (
+        <NotePreviewModal
+          note={previewNote}
+          showActions
+          onEdit={() => { setPreviewNote(null); setEditNote(previewNote); setShowModal(true); }}
+          onDelete={() => { setPreviewNote(null); handleDelete(previewNote.id); }}
+          onClose={() => setPreviewNote(null)}
         />
       )}
     </div>

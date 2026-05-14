@@ -21,6 +21,7 @@ export interface LearningNote {
   weekNumber?: number;
   year?: number;
   tags: string[];
+  category: string;
   sources: string[];
   createdAt: string;
   updatedAt: string;

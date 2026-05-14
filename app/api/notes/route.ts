@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { title, content, type, date, weekNumber, year, tags, sourceIds } = await req.json();
+  const { title, content, type, date, weekNumber, year, tags, category, sourceIds } = await req.json();
 
   if (!title || !content || !type || !date) {
     return NextResponse.json({ error: "Field wajib tidak lengkap" }, { status: 400 });
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       weekNumber: weekNumber ?? null,
       year: year ?? null,
       tags: tags ?? [],
+      category: category ?? "Lainnya",
       userId: session.user.id,
       sources: sourceIds?.length
         ? { connect: sourceIds.map((id: string) => ({ id })) }
