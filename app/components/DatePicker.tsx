@@ -72,7 +72,7 @@ export default function DatePicker({ value, onChange }: Props) {
         ref={triggerRef}
         type="button"
         onClick={openPicker}
-        className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 hover:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white w-full"
+        className="flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:border-indigo-400 dark:hover:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 w-full"
       >
         <Calendar className="w-4 h-4 text-indigo-500 shrink-0" />
         <span className="capitalize truncate">{displayValue}</span>
@@ -82,7 +82,7 @@ export default function DatePicker({ value, onChange }: Props) {
         <>
           <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-[9999] bg-white border border-gray-200 rounded-2xl shadow-2xl p-4 w-72"
+            className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-4 w-72"
             style={{ top: popupPos.top, left: popupPos.left }}
           >
             {/* Header */}
@@ -90,17 +90,17 @@ export default function DatePicker({ value, onChange }: Props) {
               <button
                 type="button"
                 onClick={() => setView(new Date(year, month - 1, 1))}
-                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="text-sm font-semibold text-gray-800 capitalize">
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 capitalize">
                 {format(view, "MMMM yyyy", { locale: id })}
               </span>
               <button
                 type="button"
                 onClick={() => setView(new Date(year, month + 1, 1))}
-                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
+                className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -109,7 +109,7 @@ export default function DatePicker({ value, onChange }: Props) {
             {/* Day-of-week headers */}
             <div className="grid grid-cols-7 mb-1">
               {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
-                <div key={d} className="text-center text-xs font-medium text-gray-400 pb-1">
+                <div key={d} className="text-center text-xs font-medium text-gray-400 dark:text-gray-500 pb-1">
                   {d}
                 </div>
               ))}
@@ -131,8 +131,8 @@ export default function DatePicker({ value, onChange }: Props) {
                       isSel
                         ? "bg-indigo-600 text-white"
                         : isToday
-                        ? "bg-indigo-50 text-indigo-600 ring-1 ring-indigo-300"
-                        : "text-gray-700 hover:bg-indigo-50",
+                        ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-300"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30",
                     ].join(" ")}
                   >
                     {day.getDate()}
@@ -142,11 +142,11 @@ export default function DatePicker({ value, onChange }: Props) {
             </div>
 
             {/* Today shortcut */}
-            <div className="mt-3 pt-3 border-t border-gray-100 text-center">
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 text-center">
               <button
                 type="button"
                 onClick={() => selectDay(new Date())}
-                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
               >
                 Hari ini
               </button>

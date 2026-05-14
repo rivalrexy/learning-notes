@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useMemo } from "react";
 import NoteCard from "@/app/components/NoteCard";
+import NotePreviewModal from "@/app/components/NotePreviewModal";
 import Pagination from "@/app/components/Pagination";
+import DatePicker from "@/app/components/DatePicker";
 import { formatDate } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
 import { Globe, Search, Loader2, Users, ChevronDown, X, AlertCircle, LayoutGrid, List } from "lucide-react";
@@ -18,21 +20,29 @@ interface Note {
 }
 
 type ViewMode = "card" | "table";
-const CARDS_PER_PAGE = 12;
+const CARDS_PER_PAGE = 6;
 const ROWS_PER_PAGE  = 20;
 
-const inputCls = "border border-gray-300 dark:border-gray-600 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:[color-scheme:dark]";
+const monthLabels: Record<string, string> = {
+  "01":"Januari","02":"Februari","03":"Maret","04":"April",
+  "05":"Mei","06":"Juni","07":"Juli","08":"Agustus",
+  "09":"September","10":"Oktober","11":"November","12":"Desember",
+};
+const formatMonth = (ym: string) => {
+  const [year, month] = ym.split("-");
+  return `${monthLabels[month]} ${year}`;
+};
 
 export default function JelajahiPage() {
   const [notes, setNotes]     = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
+  const [previewNote, setPreviewNote] = useState<Note | null>(null);
 
   const [search, setSearch]             = useState("");
   const [filterUserId, setFilterUserId] = useState<string>("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [dateFrom, setDateFrom]         = useState("");
-  const [dateTo, setDateTo]             = useState("");
+  const [filterDate, setFilterDate]     = useState("");
   const [viewMode, setViewMode]         = useState<ViewMode>(() =>
     typeof window !== "undefined" ? (localStorage.getItem("jelajahi-view") as ViewMode) ?? "card" : "card"
   );
@@ -51,7 +61,7 @@ export default function JelajahiPage() {
       .finally(() => setLoading(false));
   };
   useEffect(() => { fetchNotes(); }, []);
-  useEffect(() => { setPage(1); }, [search, filterUserId, dateFrom, dateTo, viewMode]);
+  useEffect(() => { setPage(1); }, [search, filterUserId, filterDate, viewMode]);
 
   const setView = (v: ViewMode) => { setViewMode(v); localStorage.setItem("jelajahi-view", v); };
 
@@ -65,15 +75,19 @@ export default function JelajahiPage() {
     const q = search.toLowerCase();
     if (filterUserId && n.user?.id !== filterUserId)  return false;
     if (q && !n.title.toLowerCase().includes(q) && !n.content.toLowerCase().includes(q) && !n.tags.some((t) => t.includes(q))) return false;
-    if (dateFrom && n.date < dateFrom) return false;
-    if (dateTo   && n.date > dateTo)   return false;
+    if (filterDate && n.date < filterDate) return false;
     return true;
-  }), [notes, search, filterUserId, dateFrom, dateTo]);
+  }), [notes, search, filterUserId, filterDate]);
 
   const perPage   = viewMode === "card" ? CARDS_PER_PAGE : ROWS_PER_PAGE;
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
   const selectedAuthor = authors.find((a) => a.id === filterUserId);
-  const hasDateFilter  = dateFrom || dateTo;
+
+  const grouped = paginated.reduce<Record<string, Note[]>>((acc, note) => {
+    const month = note.date.slice(0, 7);
+    (acc[month] ??= []).push(note);
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-5">
@@ -156,16 +170,13 @@ export default function JelajahiPage() {
         </div>
       </div>
 
-      {/* Date range filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">Tanggal:</span>
-        <input type="date" value={dateFrom} max={dateTo || undefined}
-          onChange={(e) => setDateFrom(e.target.value)} className={inputCls} />
-        <span className="text-xs text-gray-400">–</span>
-        <input type="date" value={dateTo} min={dateFrom || undefined}
-          onChange={(e) => setDateTo(e.target.value)} className={inputCls} />
-        {hasDateFilter && (
-          <button onClick={() => { setDateFrom(""); setDateTo(""); }}
+      {/* Date filter */}
+      <div className="flex items-center gap-2">
+        <div className="w-56">
+          <DatePicker value={filterDate} onChange={setFilterDate} />
+        </div>
+        {filterDate && (
+          <button onClick={() => setFilterDate("")}
             className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors">
             <X className="w-3 h-3" /> Reset
           </button>
@@ -210,9 +221,16 @@ export default function JelajahiPage() {
         </div>
       ) : viewMode === "card" ? (
         <>
-          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {paginated.map((note) => (
-              <NoteCard key={note.id} note={note} />
+          <div className="space-y-8">
+            {Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([month, monthNotes]) => (
+              <div key={month}>
+                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{formatMonth(month)}</h2>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {monthNotes.map((note) => (
+                    <NoteCard key={note.id} note={note} />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
           <Pagination page={page} total={filtered.length} perPage={perPage} onChange={setPage} />
@@ -235,7 +253,9 @@ export default function JelajahiPage() {
                   const cat = note.category || "Lainnya";
                   const c   = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
                   return (
-                    <tr key={note.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+                    <tr key={note.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                      onClick={() => setPreviewNote(note)}>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{cat}</span>
                       </td>
@@ -270,6 +290,13 @@ export default function JelajahiPage() {
           </div>
           <Pagination page={page} total={filtered.length} perPage={perPage} onChange={setPage} />
         </>
+      )}
+
+      {previewNote && (
+        <NotePreviewModal
+          note={previewNote}
+          onClose={() => setPreviewNote(null)}
+        />
       )}
     </div>
   );

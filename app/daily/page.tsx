@@ -7,6 +7,7 @@ import NotePreviewModal from "@/app/components/NotePreviewModal";
 import Pagination from "@/app/components/Pagination";
 import { formatDate } from "@/app/lib/utils";
 import { CATEGORIES, CATEGORY_COLOR } from "@/app/lib/categories";
+import DatePicker from "@/app/components/DatePicker";
 import { Plus, Calendar, Search, Loader2, LayoutGrid, List, Pencil, Trash2, X } from "lucide-react";
 
 interface Source { id: string; title: string; type: string; url?: string; }
@@ -17,10 +18,8 @@ interface Note {
 }
 
 type ViewMode = "card" | "table";
-const CARDS_PER_PAGE = 12;
+const CARDS_PER_PAGE = 6;
 const ROWS_PER_PAGE  = 20;
-
-const inputCls = "border border-gray-300 dark:border-gray-600 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:[color-scheme:dark]";
 
 const monthLabels: Record<string, string> = {
   "01":"Januari","02":"Februari","03":"Maret","04":"April",
@@ -43,8 +42,7 @@ export default function DailyPage() {
   const [search, setSearch]           = useState("");
   const [filterTag, setFilterTag]     = useState("");
   const [filterCategory, setFilterCategory] = useState("");
-  const [dateFrom, setDateFrom]       = useState("");
-  const [dateTo, setDateTo]           = useState("");
+  const [filterDate, setFilterDate]   = useState("");
   const [viewMode, setViewMode]       = useState<ViewMode>(() =>
     typeof window !== "undefined" ? (localStorage.getItem("daily-view") as ViewMode) ?? "card" : "card"
   );
@@ -62,7 +60,7 @@ export default function DailyPage() {
   useEffect(() => { load(); }, []);
 
   // Reset to page 1 on any filter change
-  useEffect(() => { setPage(1); }, [search, filterTag, filterCategory, dateFrom, dateTo, viewMode]);
+  useEffect(() => { setPage(1); }, [search, filterTag, filterCategory, filterDate, viewMode]);
 
   const setView = (v: ViewMode) => { setViewMode(v); localStorage.setItem("daily-view", v); };
 
@@ -81,8 +79,7 @@ export default function DailyPage() {
     if (q && !n.title.toLowerCase().includes(q) && !n.content.toLowerCase().includes(q)) return false;
     if (filterTag      && !n.tags.includes(filterTag))       return false;
     if (filterCategory && n.category !== filterCategory)     return false;
-    if (dateFrom       && n.date < dateFrom)                 return false;
-    if (dateTo         && n.date > dateTo)                   return false;
+    if (filterDate     && n.date < filterDate)               return false;
     return true;
   });
 
@@ -94,8 +91,6 @@ export default function DailyPage() {
     (acc[month] ??= []).push(note);
     return acc;
   }, {});
-
-  const hasDateFilter = dateFrom || dateTo;
 
   return (
     <div className="space-y-5">
@@ -137,16 +132,13 @@ export default function DailyPage() {
         </div>
       </div>
 
-      {/* Date range filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">Tanggal:</span>
-        <input type="date" value={dateFrom} max={dateTo || undefined}
-          onChange={(e) => setDateFrom(e.target.value)} className={inputCls} />
-        <span className="text-xs text-gray-400">–</span>
-        <input type="date" value={dateTo} min={dateFrom || undefined}
-          onChange={(e) => setDateTo(e.target.value)} className={inputCls} />
-        {hasDateFilter && (
-          <button onClick={() => { setDateFrom(""); setDateTo(""); }}
+      {/* Date filter */}
+      <div className="flex items-center gap-2">
+        <div className="w-56">
+          <DatePicker value={filterDate} onChange={setFilterDate} />
+        </div>
+        {filterDate && (
+          <button onClick={() => setFilterDate("")}
             className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors">
             <X className="w-3 h-3" /> Reset
           </button>
