@@ -8,8 +8,8 @@ import { ThemeProvider } from "@/app/components/ThemeProvider";
 const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "BelajarKu - Catatan Belajar",
-  description: "Aplikasi catatan belajar harian dan mingguan",
+  title: "Our Journey - Catatan Perjalanan Berdua",
+  description: "Catat perjalanan belajar dan tumbuh bersama pasanganmu",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -44,7 +44,7 @@ export default function Navbar() {
             {/* Logo */}
             <div className="flex items-center gap-2">
               <BookOpen className="w-6 h-6 text-indigo-600" />
-              <span className="font-bold text-gray-900 dark:text-white text-lg">BelajarKu</span>
+              <span className="font-bold text-gray-900 dark:text-white text-lg">Our Journey</span>
             </div>
 
             {/* Desktop Nav */}

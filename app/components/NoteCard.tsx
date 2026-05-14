@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { formatDate, getYouTubeThumbnail } from "@/app/lib/utils";
+import { CATEGORY_COLOR } from "@/app/lib/categories";
 import {
   Calendar, Tag, Trash2, Pencil,
   Play, BookOpen, FileText, HelpCircle, Eye,
@@ -14,7 +15,7 @@ interface NoteSource { id: string; title: string; type: string; url?: string | n
 interface Note {
   id: string; type: string; title: string; content: string;
   date: string; weekNumber?: number; year?: number;
-  tags: string[]; sources: NoteSource[];
+  tags: string[]; category?: string; sources: NoteSource[];
   isPublic?: boolean; shareToken?: string | null;
   user?: { id: string; name: string };
 }
@@ -70,6 +71,14 @@ export default function NoteCard({ note, onEdit, onDelete }: Props) {
                 {note.title}
               </h3>
               <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                {note.category && note.category !== "Lainnya" && (() => {
+                  const c = CATEGORY_COLOR[note.category] ?? CATEGORY_COLOR["Lainnya"];
+                  return (
+                    <span className={`px-2 py-0.5 rounded-full font-medium ${c.bg} ${c.text}`}>
+                      {note.category}
+                    </span>
+                  );
+                })()}
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" />
                   {formatDate(note.date)}

@@ -3,9 +3,10 @@
 import { useRef, useState, useEffect } from "react";
 import { NoteType } from "@/app/types";
 import { getWeekNumber, getWeekStartDate, getYouTubeThumbnail, todayISO } from "@/app/lib/utils";
+import { CATEGORIES, CATEGORY_COLOR, suggestCategory } from "@/app/lib/categories";
 import {
   X, Plus, Minus, Loader2, Check,
-  Play, BookOpen, FileText, HelpCircle,
+  Play, BookOpen, FileText, HelpCircle, Wand2,
 } from "lucide-react";
 import DatePicker from "@/app/components/DatePicker";
 import WeekPicker from "@/app/components/WeekPicker";
@@ -18,7 +19,7 @@ interface Source { id: string; title: string; type: string; url?: string | null;
 interface NoteData {
   id?: string; type: NoteType; title: string; content: string;
   date: string; weekNumber?: number; year?: number;
-  tags: string[]; sources: { id: string }[];
+  tags: string[]; category?: string; sources: { id: string }[];
 }
 
 interface Props {
@@ -62,6 +63,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
   const [weekYear, setWeekYear] = useState(note?.year ?? nowDate.getFullYear());
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(note?.tags ?? []);
+  const [category, setCategory] = useState(note?.category ?? "Lainnya");
   const [selectedSources, setSelectedSources] = useState<string[]>(
     note?.sources?.map((s) => s.id) ?? []
   );
@@ -187,6 +189,7 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
           weekNumber: type === "weekly" ? weekNum : null,
           year: type === "weekly" ? weekYear : null,
           tags,
+          category,
           sourceIds: selectedSources,
         }),
       });
@@ -281,6 +284,40 @@ export default function NoteModal({ type, note, sources, onSave, onClose }: Prop
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Kategori */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Kategori</label>
+              <button
+                type="button"
+                onClick={() => setCategory(suggestCategory(title, content, tags))}
+                className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 px-2 py-1 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+              >
+                <Wand2 className="w-3.5 h-3.5" /> Otomatis
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORIES.map((cat) => {
+                const color = CATEGORY_COLOR[cat];
+                const active = category === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategory(cat)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                      active
+                        ? `${color.bg} ${color.text} border-current ring-2 ring-offset-1 ring-indigo-300 dark:ring-indigo-700`
+                        : "border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Sumber Belajar */}

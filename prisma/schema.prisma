@@ -27,6 +27,7 @@ model LearningNote {
   weekNumber  Int?
   year        Int?
   tags        String[]
+  category    String   @default("Lainnya")
   isPublic    Boolean  @default(false)
   shareToken  String?  @unique
   createdAt   DateTime @default(now())

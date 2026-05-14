@@ -16,7 +16,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const note = await ownsNote(session.user.id, id);
   if (!note) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const { title, content, date, weekNumber, year, tags, sourceIds } = await req.json();
+  const { title, content, date, weekNumber, year, tags, category, sourceIds } = await req.json();
 
   const updated = await prisma.learningNote.update({
     where: { id },
@@ -27,6 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       weekNumber: weekNumber ?? null,
       year: year ?? null,
       tags: tags ?? [],
+      category: category ?? "Lainnya",
       sources: {
         set: sourceIds?.map((sid: string) => ({ id: sid })) ?? [],
       },
