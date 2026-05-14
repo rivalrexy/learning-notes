@@ -33,10 +33,13 @@ export default function WeeklyPage() {
   const [search, setSearch]               = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterDate, setFilterDate]       = useState("");
-  const [viewMode, setViewMode]           = useState<ViewMode>(() =>
-    typeof window !== "undefined" ? (localStorage.getItem("weekly-view") as ViewMode) ?? "card" : "card"
-  );
+  const [viewMode, setViewMode]           = useState<ViewMode>("card");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("weekly-view");
+    if (saved === "card" || saved === "table") setViewMode(saved);
+  }, []);
 
   const load = async () => {
     const [n, s] = await Promise.all([

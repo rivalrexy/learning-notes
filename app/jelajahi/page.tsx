@@ -44,10 +44,13 @@ export default function JelajahiPage() {
   const [filterCategory, setFilterCategory]   = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [filterDate, setFilterDate]           = useState("");
-  const [viewMode, setViewMode]               = useState<ViewMode>(() =>
-    typeof window !== "undefined" ? (localStorage.getItem("jelajahi-view") as ViewMode) ?? "card" : "card"
-  );
+  const [viewMode, setViewMode]               = useState<ViewMode>("card");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("jelajahi-view");
+    if (saved === "card" || saved === "table") setViewMode(saved);
+  }, []);
 
   const fetchNotes = () => {
     setLoading(true);

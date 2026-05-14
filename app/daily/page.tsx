@@ -43,10 +43,13 @@ export default function DailyPage() {
   const [filterTag, setFilterTag]     = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterDate, setFilterDate]   = useState("");
-  const [viewMode, setViewMode]       = useState<ViewMode>(() =>
-    typeof window !== "undefined" ? (localStorage.getItem("daily-view") as ViewMode) ?? "card" : "card"
-  );
+  const [viewMode, setViewMode]       = useState<ViewMode>("card");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("daily-view");
+    if (saved === "card" || saved === "table") setViewMode(saved);
+  }, []);
 
   const load = async () => {
     const [n, s] = await Promise.all([
