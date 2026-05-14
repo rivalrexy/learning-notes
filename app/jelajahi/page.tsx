@@ -5,7 +5,7 @@ import NoteCard from "@/app/components/NoteCard";
 import NotePreviewModal from "@/app/components/NotePreviewModal";
 import Pagination from "@/app/components/Pagination";
 import DatePicker from "@/app/components/DatePicker";
-import { formatDate } from "@/app/lib/utils";
+import { formatDate, getWeekRange } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
 import { Globe, Search, Loader2, Users, ChevronDown, X, AlertCircle, LayoutGrid, List } from "lucide-react";
 
@@ -39,11 +39,12 @@ export default function JelajahiPage() {
   const [error, setError]     = useState<string | null>(null);
   const [previewNote, setPreviewNote] = useState<Note | null>(null);
 
-  const [search, setSearch]             = useState("");
-  const [filterUserId, setFilterUserId] = useState<string>("");
+  const [search, setSearch]                   = useState("");
+  const [filterUserId, setFilterUserId]       = useState<string>("");
+  const [filterCategory, setFilterCategory]   = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [filterDate, setFilterDate]     = useState("");
-  const [viewMode, setViewMode]         = useState<ViewMode>(() =>
+  const [filterDate, setFilterDate]           = useState("");
+  const [viewMode, setViewMode]               = useState<ViewMode>(() =>
     typeof window !== "undefined" ? (localStorage.getItem("jelajahi-view") as ViewMode) ?? "card" : "card"
   );
   const [page, setPage] = useState(1);
@@ -61,7 +62,7 @@ export default function JelajahiPage() {
       .finally(() => setLoading(false));
   };
   useEffect(() => { fetchNotes(); }, []);
-  useEffect(() => { setPage(1); }, [search, filterUserId, filterDate, viewMode]);
+  useEffect(() => { setPage(1); }, [search, filterUserId, filterCategory, filterDate, viewMode]);
 
   const setView = (v: ViewMode) => { setViewMode(v); localStorage.setItem("jelajahi-view", v); };
 
@@ -71,16 +72,22 @@ export default function JelajahiPage() {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [notes]);
 
+  const usedCategories = useMemo(
+    () => [...new Set(notes.map((n) => n.category).filter(Boolean))] as string[],
+    [notes]
+  );
+
   const filtered = useMemo(() => notes.filter((n) => {
     const q = search.toLowerCase();
-    if (filterUserId && n.user?.id !== filterUserId)  return false;
+    if (filterUserId   && n.user?.id !== filterUserId)        return false;
+    if (filterCategory && n.category !== filterCategory)      return false;
     if (q && !n.title.toLowerCase().includes(q) && !n.content.toLowerCase().includes(q) && !n.tags.some((t) => t.includes(q))) return false;
-    if (filterDate && n.date < filterDate) return false;
+    if (filterDate     && n.date < filterDate)                return false;
     return true;
-  }), [notes, search, filterUserId, filterDate]);
+  }), [notes, search, filterUserId, filterCategory, filterDate]);
 
-  const perPage   = viewMode === "card" ? CARDS_PER_PAGE : ROWS_PER_PAGE;
-  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
+  const perPage    = viewMode === "card" ? CARDS_PER_PAGE : ROWS_PER_PAGE;
+  const paginated  = filtered.slice((page - 1) * perPage, page * perPage);
   const selectedAuthor = authors.find((a) => a.id === filterUserId);
 
   const grouped = paginated.reduce<Record<string, Note[]>>((acc, note) => {
@@ -117,7 +124,7 @@ export default function JelajahiPage() {
           />
         </div>
 
-        {/* User filter */}
+        {/* User filter dropdown */}
         <div className="relative">
           <button onClick={() => setShowUserDropdown((v) => !v)}
             className={`flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-lg border text-sm font-medium transition-colors ${filterUserId ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"}`}>
@@ -183,6 +190,25 @@ export default function JelajahiPage() {
         )}
       </div>
 
+      {/* Category filter pills */}
+      {usedCategories.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setFilterCategory("")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${!filterCategory ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+            Semua Kategori
+          </button>
+          {usedCategories.map((cat) => {
+            const c = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
+            return (
+              <button key={cat} onClick={() => setFilterCategory(filterCategory === cat ? "" : cat)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${filterCategory === cat ? `${c.bg} ${c.text} border-current` : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Active filter chips */}
       {(filterUserId || search) && (
         <div className="flex flex-wrap gap-2">
@@ -227,7 +253,17 @@ export default function JelajahiPage() {
                 <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{formatMonth(month)}</h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   {monthNotes.map((note) => (
-                    <NoteCard key={note.id} note={note} />
+                    <div key={note.id}>
+                      {note.type === "weekly" && note.weekNumber && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                            Pekan {note.weekNumber}
+                          </span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">{getWeekRange(note.weekNumber, note.year!)}</span>
+                        </div>
+                      )}
+                      <NoteCard note={note} />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -243,7 +279,7 @@ export default function JelajahiPage() {
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">Kategori</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Judul</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-28 hidden sm:table-cell">Tanggal</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-36 hidden sm:table-cell">Tanggal / Pekan</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">Pelajar</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden lg:table-cell">Tags</th>
                 </tr>
@@ -263,7 +299,16 @@ export default function JelajahiPage() {
                         <p className="font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{note.title}</p>
                         <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 mt-0.5">{note.content.replace(/[#*`>_]/g, "").slice(0, 80)}</p>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap hidden sm:table-cell">{formatDate(note.date)}</td>
+                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                        {note.type === "weekly" && note.weekNumber ? (
+                          <div>
+                            <div className="font-medium text-purple-600 dark:text-purple-400">Pekan {note.weekNumber}</div>
+                            <div className="text-gray-400 mt-0.5">{getWeekRange(note.weekNumber, note.year!)}</div>
+                          </div>
+                        ) : (
+                          <span className="whitespace-nowrap">{formatDate(note.date)}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         {note.user && (
                           <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
