@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDate, getWeekRange, stripMarkdown } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
+import NotePreviewModal from "@/app/components/NotePreviewModal";
 import {
   Calendar, CalendarDays, Library, BookOpen,
   TrendingUp, FileText, Tag,
@@ -11,10 +12,13 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+interface NoteSource { id: string; title: string; type: string; url?: string | null; }
 interface Note {
   id: string; type: string; title: string; content: string;
   date: string; weekNumber?: number; year?: number;
   tags: string[]; category?: string;
+  sources?: NoteSource[];
+  isPublic?: boolean; shareToken?: string | null;
 }
 interface Source { id: string; type: string; title: string; }
 
@@ -51,9 +55,9 @@ interface WeekCell { weekNumber: number; year: number; hasNote: boolean; label: 
 function getWeeklyActivityCells(weeklyNotes: Note[]): WeekCell[] {
   const noteWeekSet = new Set(weeklyNotes.map((n) => `${n.year}-${n.weekNumber}`));
   const today = new Date();
-  return Array.from({ length: 24 }, (_, i) => {
+  return Array.from({ length: 48 }, (_, i) => {
     const d = new Date(today);
-    d.setDate(today.getDate() - (23 - i) * 7);
+    d.setDate(today.getDate() - (47 - i) * 7);
     const weekNum = getISOWeekNumber(d);
     const year = d.getFullYear();
     return {
@@ -65,9 +69,10 @@ function getWeeklyActivityCells(weeklyNotes: Note[]): WeekCell[] {
 }
 
 export default function Dashboard() {
-  const [notes, setNotes]     = useState<Note[]>([]);
-  const [sources, setSources] = useState<Source[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [notes, setNotes]         = useState<Note[]>([]);
+  const [sources, setSources]     = useState<Source[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [previewNote, setPreviewNote] = useState<Note | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -101,6 +106,12 @@ export default function Dashboard() {
   }, {});
   const weeklyCatData  = Object.entries(weeklyCatCounts).sort(([, a], [, b]) => b - a);
   const maxWeeklyCat   = Math.max(...weeklyCatData.map(([, c]) => c), 1);
+
+  // Weekly note lookup by week key
+  const weeklyNoteLookup = weeklyNotes.reduce<Record<string, Note>>((acc, n) => {
+    if (n.weekNumber && n.year) acc[`${n.year}-${n.weekNumber}`] = n;
+    return acc;
+  }, {});
 
   // Weekly top tags
   const weeklyTagCounts = weeklyNotes
@@ -186,25 +197,30 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">24 minggu terakhir</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">48 minggu terakhir</span>
           </div>
 
-          {/* Weekly activity cells — 3 rows × 8 weeks */}
-          <div className="space-y-1.5">
-            {[0, 1, 2].map((row) => (
-              <div key={row} className="flex gap-1.5">
-                {weeklyActivityCells.slice(row * 8, row * 8 + 8).map((cell, i) => (
-                  <div key={i} title={cell.label + (cell.hasNote ? " ✓" : " —")}
-                    className={`flex-1 h-8 rounded-lg transition-colors flex items-center justify-center ${
-                      cell.hasNote
-                        ? "bg-purple-500 dark:bg-purple-500 text-white"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-600"
-                    }`}>
-                    {cell.hasNote
-                      ? <CheckCircle2 className="w-3.5 h-3.5" />
-                      : <span className="text-[9px] font-medium">{cell.weekNumber}</span>}
-                  </div>
-                ))}
+          {/* Weekly activity cells — 4 rows × 12 weeks */}
+          <div className="space-y-1">
+            {[0, 1, 2, 3].map((row) => (
+              <div key={row} className="flex gap-1">
+                {weeklyActivityCells.slice(row * 12, row * 12 + 12).map((cell, i) => {
+                  const note = weeklyNoteLookup[`${cell.year}-${cell.weekNumber}`] ?? null;
+                  return (
+                    <div key={i}
+                      title={cell.label + (cell.hasNote ? " ✓" : " —")}
+                      onClick={() => note && setPreviewNote(note)}
+                      className={`flex-1 h-7 rounded-md transition-colors flex items-center justify-center ${
+                        cell.hasNote
+                          ? "bg-purple-500 dark:bg-purple-500 text-white cursor-pointer hover:bg-purple-600 dark:hover:bg-purple-400"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-600"
+                      }`}>
+                      {cell.hasNote
+                        ? <CheckCircle2 className="w-3 h-3" />
+                        : <span className="text-[8px] font-medium">{cell.weekNumber}</span>}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -214,14 +230,14 @@ export default function Dashboard() {
               <div className="w-4 h-4 rounded bg-purple-500 flex items-center justify-center">
                 <CheckCircle2 className="w-2.5 h-2.5 text-white" />
               </div>
-              <span>Ada catatan</span>
+              <span>Ada catatan · klik untuk buka</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-700" />
               <span>Tidak ada</span>
             </div>
             <span className="ml-auto">
-              {weeklyActivityCells.filter((c) => c.hasNote).length} dari 24 minggu terisi
+              {weeklyActivityCells.filter((c) => c.hasNote).length} dari 48 minggu terisi
             </span>
           </div>
         </div>
@@ -373,7 +389,8 @@ export default function Dashboard() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {recentNotes.map((note) => (
-              <div key={note.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div key={note.id} onClick={() => setPreviewNote(note)}
+                className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer">
                 <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                   note.type === "daily" ? "bg-blue-50 dark:bg-blue-900/30" : "bg-purple-50 dark:bg-purple-900/30"
                 }`}>
@@ -397,6 +414,12 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+      {previewNote && (
+        <NotePreviewModal
+          note={{ ...previewNote, sources: previewNote.sources ?? [] }}
+          onClose={() => setPreviewNote(null)}
+        />
+      )}
     </div>
   );
 }
