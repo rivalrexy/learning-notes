@@ -7,7 +7,7 @@ import Pagination from "@/app/components/Pagination";
 import DatePicker from "@/app/components/DatePicker";
 import { formatDate, getWeekRange } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
-import { Globe, Search, Loader2, Users, ChevronDown, X, AlertCircle, LayoutGrid, List } from "lucide-react";
+import { Globe, Search, Loader2, Users, ChevronDown, X, AlertCircle, LayoutGrid, List, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 interface NoteSource { id: string; title: string; type: string; url?: string | null; }
 interface Author { id: string; name: string; }
@@ -20,6 +20,8 @@ interface Note {
 }
 
 type ViewMode = "card" | "table";
+type SortKey = "date" | "title" | "category" | "user";
+type SortDir = "asc" | "desc";
 const CARDS_PER_PAGE = 6;
 const ROWS_PER_PAGE  = 20;
 
@@ -33,6 +35,27 @@ const formatMonth = (ym: string) => {
   return `${monthLabels[month]} ${year}`;
 };
 
+const ACCENT_GRADIENTS = [
+  "bg-gradient-to-r from-rose-400 to-pink-500",
+  "bg-gradient-to-r from-blue-400 to-indigo-500",
+  "bg-gradient-to-r from-emerald-400 to-teal-500",
+  "bg-gradient-to-r from-violet-400 to-purple-500",
+  "bg-gradient-to-r from-amber-400 to-orange-500",
+  "bg-gradient-to-r from-cyan-400 to-sky-500",
+];
+const ACCENT_DOT_COLORS = [
+  "bg-rose-400", "bg-blue-400", "bg-emerald-400",
+  "bg-violet-400", "bg-amber-400", "bg-cyan-400",
+];
+function getAccentIndex(userId: string): number {
+  let h = 0;
+  for (let i = 0; i < userId.length; i++) h = (h << 5) - h + userId.charCodeAt(i);
+  return Math.abs(h) % ACCENT_GRADIENTS.length;
+}
+function getAccentColor(userId: string): string {
+  return ACCENT_GRADIENTS[getAccentIndex(userId)];
+}
+
 export default function JelajahiPage() {
   const [notes, setNotes]     = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +68,8 @@ export default function JelajahiPage() {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [filterDate, setFilterDate]           = useState("");
   const [viewMode, setViewMode]               = useState<ViewMode>("card");
+  const [sortKey, setSortKey]                 = useState<SortKey>("date");
+  const [sortDir, setSortDir]                 = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -69,6 +94,16 @@ export default function JelajahiPage() {
 
   const setView = (v: ViewMode) => { setViewMode(v); localStorage.setItem("jelajahi-view", v); };
 
+  const handleSort = (key: SortKey) => {
+    setPage(1);
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("desc"); }
+  };
+  const SortIcon = ({ col }: { col: SortKey }) =>
+    sortKey === col
+      ? sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-indigo-500" /> : <ArrowDown className="w-3 h-3 text-indigo-500" />
+      : <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />;
+
   const authors = useMemo<Author[]>(() => {
     const map = new Map<string, string>();
     notes.forEach((n) => { if (n.user) map.set(n.user.id, n.user.name); });
@@ -89,8 +124,16 @@ export default function JelajahiPage() {
     return true;
   }), [notes, search, filterUserId, filterCategory, filterDate]);
 
-  const perPage    = viewMode === "card" ? CARDS_PER_PAGE : ROWS_PER_PAGE;
-  const paginated  = filtered.slice((page - 1) * perPage, page * perPage);
+  const perPage = viewMode === "card" ? CARDS_PER_PAGE : ROWS_PER_PAGE;
+  const sortedForTable = viewMode === "table" ? [...filtered].sort((a, b) => {
+    let cmp = 0;
+    if (sortKey === "date")     cmp = a.date.localeCompare(b.date);
+    if (sortKey === "title")    cmp = a.title.localeCompare(b.title, "id");
+    if (sortKey === "category") cmp = (a.category ?? "").localeCompare(b.category ?? "", "id");
+    if (sortKey === "user")     cmp = a.user.name.localeCompare(b.user.name, "id");
+    return sortDir === "asc" ? cmp : -cmp;
+  }) : filtered;
+  const paginated  = sortedForTable.slice((page - 1) * perPage, page * perPage);
   const selectedAuthor = authors.find((a) => a.id === filterUserId);
 
   const grouped = paginated.reduce<Record<string, Note[]>>((acc, note) => {
@@ -250,6 +293,18 @@ export default function JelajahiPage() {
         </div>
       ) : viewMode === "card" ? (
         <>
+          {/* Author color legend */}
+          {authors.length > 1 && (
+            <div className="flex flex-wrap gap-3 items-center py-2 px-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+              <span className="text-xs font-medium text-gray-400 dark:text-gray-500 shrink-0">Pelajar:</span>
+              {authors.map((a) => (
+                <div key={a.id} className="flex items-center gap-1.5">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${ACCENT_DOT_COLORS[getAccentIndex(a.id)]}`} />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">{a.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="space-y-8">
             {Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([month, monthNotes]) => (
               <div key={month}>
@@ -265,7 +320,7 @@ export default function JelajahiPage() {
                           <span className="text-xs text-gray-400 dark:text-gray-500">{getWeekRange(note.weekNumber, note.year!)}</span>
                         </div>
                       )}
-                      <NoteCard note={note} />
+                      <NoteCard note={note} accentColor={getAccentColor(note.user.id)} />
                     </div>
                   ))}
                 </div>
@@ -280,11 +335,19 @@ export default function JelajahiPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">Kategori</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Judul</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-36 hidden sm:table-cell">Tanggal / Pekan</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">Pelajar</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden lg:table-cell">Tags</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">
+                    <button onClick={() => handleSort("category")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Kategori <SortIcon col="category" /></button>
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    <button onClick={() => handleSort("title")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Judul <SortIcon col="title" /></button>
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-36 hidden sm:table-cell">
+                    <button onClick={() => handleSort("date")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Tanggal / Pekan <SortIcon col="date" /></button>
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">
+                    <button onClick={() => handleSort("user")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Pelajar <SortIcon col="user" /></button>
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden lg:table-cell">Tags</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -315,9 +378,7 @@ export default function JelajahiPage() {
                       <td className="px-4 py-3 hidden md:table-cell">
                         {note.user && (
                           <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                            <div className="w-5 h-5 bg-indigo-100 dark:bg-indigo-800 rounded-full flex items-center justify-center text-[9px] font-bold text-indigo-600 dark:text-indigo-300 shrink-0">
-                              {note.user.name.charAt(0).toUpperCase()}
-                            </div>
+                            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${ACCENT_DOT_COLORS[getAccentIndex(note.user.id)]}`} />
                             {note.user.name}
                           </div>
                         )}
