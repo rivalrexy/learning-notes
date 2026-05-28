@@ -5,7 +5,7 @@ import NoteCard from "@/app/components/NoteCard";
 import NotePreviewModal from "@/app/components/NotePreviewModal";
 import Pagination from "@/app/components/Pagination";
 import DatePicker from "@/app/components/DatePicker";
-import { formatDate, getWeekRange } from "@/app/lib/utils";
+import { formatDate, getWeekRange, stripMarkdown } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
 import {
   Globe,
@@ -578,7 +578,7 @@ export default function JelajahiPage() {
                           {note.title}
                         </p>
                         <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 mt-0.5">
-                          {note.content.replace(/[#*`>_]/g, "").slice(0, 80)}
+                          {stripMarkdown(note.content)}
                         </p>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 hidden sm:table-cell">

@@ -50,3 +50,26 @@ export function getYouTubeThumbnail(url: string): string | null {
   const id = getYouTubeId(url);
   return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
 }
+
+export function stripMarkdown(text: string, maxLength = 80): string {
+  return text
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^[ \t]*[-*+]\s+/gm, "· ")
+    .replace(/^[ \t]*\d+\.\s+/gm, "· ")
+    .replace(/\\(.)/g, "$1")
+    .replace(/\*{3}(.+?)\*{3}/gs, "$1")
+    .replace(/_{3}(.+?)_{3}/gs, "$1")
+    .replace(/\*{2}(.+?)\*{2}/gs, "$1")
+    .replace(/_{2}(.+?)_{2}/gs, "$1")
+    .replace(/\*(.+?)\*/gs, "$1")
+    .replace(/_(.+?)_/gs, "$1")
+    .replace(/`[^`]+`/g, "")
+    .replace(/^>\s*/gm, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
+    .replace(/\n+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .slice(0, maxLength);
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { formatDate, getWeekRange } from "@/app/lib/utils";
+import { formatDate, getWeekRange, stripMarkdown } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
 import {
   Calendar, CalendarDays, Library, BookOpen,
@@ -389,7 +389,7 @@ export default function Dashboard() {
                       : formatDate(note.date)}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                    {note.content.replace(/[#*`>_\[\]]/g, "").slice(0, 80)}
+                    {stripMarkdown(note.content)}
                   </p>
                 </div>
               </div>
