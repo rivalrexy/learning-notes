@@ -39,15 +39,23 @@ export default function LoginPage() {
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm w-full max-w-md p-8">
         <div className="flex items-center justify-center gap-2 mb-8">
           <BookOpen className="w-7 h-7 text-indigo-600" />
-          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">BelajarKu</span>
+          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            BelajarKu
+          </span>
         </div>
 
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 text-center mb-1">Masuk ke akun</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">Lanjutkan catatan belajarmu</p>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 text-center mb-1">
+          Masuk ke akun
+        </h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+          Lanjutkan catatan belajarmu
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email
+            </label>
             <input
               type="email"
               value={email}
@@ -58,7 +66,9 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Password
+            </label>
             <input
               type="password"
               value={password}
@@ -85,12 +95,12 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-6">
+        {/* <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-6">
           Belum punya akun?{" "}
           <Link href="/register" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">
             Daftar sekarang
           </Link>
-        </p>
+        </p> */}
       </div>
     </div>
   );
