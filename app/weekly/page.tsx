@@ -5,7 +5,7 @@ import NoteCard from "@/app/components/NoteCard";
 import NoteModal from "@/app/components/NoteModal";
 import NotePreviewModal from "@/app/components/NotePreviewModal";
 import Pagination from "@/app/components/Pagination";
-import { formatDate, getWeekRange } from "@/app/lib/utils";
+import { formatDate, getWeekRange, stripMarkdown } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
 import DatePicker from "@/app/components/DatePicker";
 import ShareAllButton from "@/app/components/ShareAllButton";
@@ -252,7 +252,7 @@ export default function WeeklyPage() {
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{note.title}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 mt-0.5">{note.content.replace(/[#*`>_]/g, "").slice(0, 80)}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 mt-0.5">{stripMarkdown(note.content)}</p>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                         {note.weekNumber ? (
