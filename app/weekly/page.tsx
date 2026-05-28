@@ -8,6 +8,7 @@ import Pagination from "@/app/components/Pagination";
 import { formatDate, getWeekRange } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
 import DatePicker from "@/app/components/DatePicker";
+import ShareAllButton from "@/app/components/ShareAllButton";
 import { Plus, CalendarDays, Search, Loader2, LayoutGrid, List, Pencil, Trash2, X, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 interface Source { id: string; title: string; type: string; url?: string; }
@@ -113,12 +114,20 @@ export default function WeeklyPage() {
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">{notes.length} catatan tersimpan</p>
         </div>
-        <button
-          onClick={() => { setEditNote(null); setShowModal(true); }}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium shrink-0"
-        >
-          <Plus className="w-4 h-4" /> Tambah Catatan
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <ShareAllButton
+            type="weekly"
+            totalNotes={notes.length}
+            publicCount={notes.filter((n) => n.isPublic).length}
+            onDone={load}
+          />
+          <button
+            onClick={() => { setEditNote(null); setShowModal(true); }}
+            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" /> Tambah Catatan
+          </button>
+        </div>
       </div>
 
       {/* Search + View toggle */}
