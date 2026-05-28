@@ -239,8 +239,32 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Per Bulan — full width */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Catatan per Bulan · {currentYear}</p>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{weeklyThisYear} pekan terisi</span>
+        </div>
+        <div className="flex items-end gap-2" style={{ height: "80px" }}>
+          {monthlyData.map(({ month, count }) => (
+            <div key={month} className="flex-1 flex flex-col items-center gap-1 group relative">
+              {count > 0 && (
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-700 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap shadow-lg z-10">
+                  {count} pekan
+                </div>
+              )}
+              <div
+                className={`w-full rounded-t-md transition-all ${count > 0 ? "bg-indigo-400 dark:bg-indigo-500 hover:bg-indigo-500 dark:hover:bg-indigo-400" : "bg-gray-100 dark:bg-gray-700"}`}
+                style={{ height: `${count > 0 ? Math.max(Math.round((count / maxMonthlyCount) * 64), 6) : 4}px` }}
+              />
+              <span className="text-[10px] text-gray-400 dark:text-gray-500 leading-none">{month.slice(0, 3)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Ringkasan Mingguan + Distribusi Sumber */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6">
 
         {/* Ringkasan Mingguan */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-5">
@@ -292,28 +316,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
-            <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">
-              Per Bulan · {currentYear}
-            </p>
-            <div className="flex items-end gap-1" style={{ height: "48px" }}>
-              {monthlyData.map(({ month, count }) => (
-                <div key={month} className="flex-1 flex flex-col items-center gap-1 group relative">
-                  {count > 0 && (
-                    <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-700 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap shadow-md z-10">
-                      {count} pekan
-                    </div>
-                  )}
-                  <div
-                    className={`w-full rounded-t-sm transition-all ${count > 0 ? "bg-indigo-400 dark:bg-indigo-500" : "bg-gray-100 dark:bg-gray-700"}`}
-                    style={{ height: `${count > 0 ? Math.max(Math.round((count / maxMonthlyCount) * 36), 4) : 3}px` }}
-                  />
-                  <span className="text-[7px] text-gray-400 dark:text-gray-600 leading-none">{month.slice(0, 3)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {topWeeklyTags.length > 0 && (
             <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
               <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
@@ -333,7 +335,7 @@ export default function Dashboard() {
         </div>
 
         {/* Distribusi Sumber */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center gap-2 mb-5">
             <PieChart className="w-4 h-4 text-amber-600" />
             <h2 className="font-semibold text-gray-900 dark:text-gray-100">Distribusi Sumber</h2>
@@ -342,7 +344,7 @@ export default function Dashboard() {
           {sources.length === 0 ? (
             <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada sumber</p>
           ) : (
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
               {sourceDistribution.map(({ label, count, color, bar }) => (
                 <div key={label} className="flex flex-col gap-2">
                   <div className={`text-3xl font-bold ${color}`}>{count}</div>
