@@ -6,8 +6,9 @@ import { formatDate, getWeekRange } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
 import {
   Calendar, CalendarDays, Library, BookOpen,
-  TrendingUp, FileText, Flame, Zap, Tag,
-  CalendarCheck, ChevronRight, Award,
+  TrendingUp, FileText, Tag,
+  CalendarCheck, ChevronRight, Award, PieChart,
+  CheckCircle2,
 } from "lucide-react";
 
 interface Note {
@@ -17,51 +18,51 @@ interface Note {
 }
 interface Source { id: string; type: string; title: string; }
 
-function calcStreak(dailyNotes: Note[]): number {
-  const dates = [...new Set(dailyNotes.map((n) => n.date))].sort().reverse();
-  if (dates.length === 0) return 0;
-  const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
-  if (dates[0] !== today && dates[0] !== yesterday) return 0;
-  let streak = 1;
-  for (let i = 1; i < dates.length; i++) {
-    const diff = Math.round((new Date(dates[i - 1]).getTime() - new Date(dates[i]).getTime()) / 86_400_000);
-    if (diff === 1) streak++;
-    else break;
+function getISOWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86_400_000) + 1) / 7);
+}
+
+function calcWeeklyStreak(weeklyNotes: Note[]): number {
+  if (weeklyNotes.length === 0) return 0;
+  const noteWeekSet = new Set(weeklyNotes.map((n) => `${n.year}-${n.weekNumber}`));
+  const today = new Date();
+  let streak = 0;
+  for (let i = 0; i <= 52; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i * 7);
+    const week = getISOWeekNumber(d);
+    const year = d.getFullYear();
+    if (noteWeekSet.has(`${year}-${week}`)) {
+      streak++;
+    } else {
+      if (i === 0) continue; // current week may not have a note yet
+      break;
+    }
   }
   return streak;
 }
 
-function getActivityCells(dailyNotes: Note[]): { date: string; count: number }[] {
-  const counts = dailyNotes.reduce<Record<string, number>>((acc, n) => {
-    acc[n.date] = (acc[n.date] || 0) + 1;
-    return acc;
-  }, {});
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(today.getDate() - 83);
-  const cells: { date: string; count: number }[] = [];
-  for (let i = 0; i < 84; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    const iso = d.toISOString().split("T")[0];
-    cells.push({ date: iso, count: counts[iso] ?? 0 });
-  }
-  return cells;
-}
+interface WeekCell { weekNumber: number; year: number; hasNote: boolean; label: string; }
 
-const activityColor = (count: number) => {
-  if (count === 0) return "bg-gray-100 dark:bg-gray-700";
-  if (count === 1) return "bg-green-200 dark:bg-green-800";
-  if (count === 2) return "bg-green-400 dark:bg-green-600";
-  return "bg-green-600 dark:bg-green-400";
-};
-const activityLegend = [
-  "bg-gray-100 dark:bg-gray-700",
-  "bg-green-200 dark:bg-green-800",
-  "bg-green-400 dark:bg-green-600",
-  "bg-green-600 dark:bg-green-400",
-];
+function getWeeklyActivityCells(weeklyNotes: Note[]): WeekCell[] {
+  const noteWeekSet = new Set(weeklyNotes.map((n) => `${n.year}-${n.weekNumber}`));
+  const today = new Date();
+  return Array.from({ length: 24 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (23 - i) * 7);
+    const weekNum = getISOWeekNumber(d);
+    const year = d.getFullYear();
+    return {
+      weekNumber: weekNum, year,
+      hasNote: noteWeekSet.has(`${year}-${weekNum}`),
+      label: `Pekan ${weekNum} ${year}`,
+    };
+  });
+}
 
 export default function Dashboard() {
   const [notes, setNotes]     = useState<Note[]>([]);
@@ -85,23 +86,23 @@ export default function Dashboard() {
   const weeklyNotes = notes.filter((n) => n.type === "weekly");
   const recentNotes = notes.slice(0, 6);
 
-  const streak       = calcStreak(dailyNotes);
-  const activityCells = getActivityCells(dailyNotes);
+  // Weekly activity
+  const weeklyStreak       = calcWeeklyStreak(weeklyNotes);
+  const weeklyActivityCells = getWeeklyActivityCells(weeklyNotes);
+  const currentYear        = new Date().getFullYear();
+  const weeklyThisYear     = weeklyNotes.filter((n) => n.year === currentYear).length;
+  const latestWeekly       = weeklyNotes[0] ?? null;
 
-  // Weekly insights
-  const currentYear      = new Date().getFullYear();
-  const weeklyThisYear   = weeklyNotes.filter((n) => n.year === currentYear).length;
-  const latestWeekly     = weeklyNotes[0] ?? null;
-
-  const weeklyCatCounts  = weeklyNotes.reduce<Record<string, number>>((acc, n) => {
+  // Weekly category breakdown
+  const weeklyCatCounts = weeklyNotes.reduce<Record<string, number>>((acc, n) => {
     const cat = n.category ?? "Lainnya";
     acc[cat] = (acc[cat] || 0) + 1;
     return acc;
   }, {});
-  const weeklyCatData = Object.entries(weeklyCatCounts)
-    .sort(([, a], [, b]) => b - a);
-  const maxWeeklyCat = Math.max(...weeklyCatData.map(([, c]) => c), 1);
+  const weeklyCatData  = Object.entries(weeklyCatCounts).sort(([, a], [, b]) => b - a);
+  const maxWeeklyCat   = Math.max(...weeklyCatData.map(([, c]) => c), 1);
 
+  // Weekly top tags
   const weeklyTagCounts = weeklyNotes
     .flatMap((n) => n.tags)
     .reduce<Record<string, number>>((acc, t) => { acc[t] = (acc[t] || 0) + 1; return acc; }, {});
@@ -109,11 +110,21 @@ export default function Dashboard() {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 8);
 
+  // Source distribution
+  const sourceCounts: Record<string, number> = { youtube: 0, book: 0, article: 0, other: 0 };
+  sources.forEach((s) => { if (s.type in sourceCounts) sourceCounts[s.type]++; });
+  const sourceDistribution = [
+    { label: "YouTube", count: sourceCounts.youtube, color: "text-red-600 dark:text-red-400",   bar: "bg-red-400 dark:bg-red-500" },
+    { label: "Buku",    count: sourceCounts.book,    color: "text-amber-600 dark:text-amber-400", bar: "bg-amber-400 dark:bg-amber-500" },
+    { label: "Artikel", count: sourceCounts.article, color: "text-blue-600 dark:text-blue-400",  bar: "bg-blue-400 dark:bg-blue-500" },
+    { label: "Lainnya", count: sourceCounts.other,   color: "text-gray-500 dark:text-gray-400",  bar: "bg-gray-400 dark:bg-gray-500" },
+  ];
+
   const stats = [
-    { label: "Catatan Harian",   value: dailyNotes.length,  icon: Calendar,     color: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",     href: "/daily" },
+    { label: "Catatan Harian",   value: dailyNotes.length,  icon: Calendar,     color: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",       href: "/daily" },
     { label: "Catatan Mingguan", value: weeklyNotes.length, icon: CalendarDays, color: "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400", href: "/weekly" },
-    { label: "Sumber Belajar",   value: sources.length,     icon: Library,      color: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",   href: "/sources" },
-    { label: "Total Catatan",    value: notes.length,       icon: FileText,     color: "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400",   href: "/" },
+    { label: "Sumber Belajar",   value: sources.length,     icon: Library,      color: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",    href: "/sources" },
+    { label: "Total Catatan",    value: notes.length,       icon: FileText,     color: "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400",    href: "/" },
   ];
 
   if (loading) {
@@ -182,13 +193,9 @@ export default function Dashboard() {
                           Pekan {note.weekNumber}
                         </span>
                       )}
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.bg} ${c.text}`}>
-                        {cat}
-                      </span>
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.bg} ${c.text}`}>{cat}</span>
                     </div>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-2 leading-snug">
-                      {note.title}
-                    </p>
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-2 leading-snug">{note.title}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed flex-1">
                       {note.content.replace(/[#*`>_\[\]]/g, "").slice(0, 120)}
                     </p>
@@ -211,16 +218,15 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Weekly stats + insights */}
+        {/* Weekly stats sidebar */}
         <div className="space-y-4">
-
-          {/* Summary numbers */}
+          {/* Summary + category breakdown in one card */}
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
             <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
               <Award className="w-4 h-4 text-purple-600" />
               Ringkasan Mingguan
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2.5 mb-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500 dark:text-gray-400">Total pekan</span>
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{weeklyNotes.length}</span>
@@ -229,48 +235,41 @@ export default function Dashboard() {
                 <span className="text-sm text-gray-500 dark:text-gray-400">Tahun {currentYear}</span>
                 <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">{weeklyThisYear} pekan</span>
               </div>
-              {latestWeekly && (
+              {latestWeekly?.weekNumber && latestWeekly.year && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500 dark:text-gray-400">Terakhir</span>
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                    Pekan {latestWeekly.weekNumber}
-                  </span>
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Pekan {latestWeekly.weekNumber}</span>
                 </div>
               )}
-              {latestWeekly?.weekNumber && latestWeekly.year && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  {getWeekRange(latestWeekly.weekNumber, latestWeekly.year)}
-                </p>
-              )}
             </div>
-          </div>
 
-          {/* Category breakdown */}
-          {weeklyCatData.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <CalendarCheck className="w-4 h-4 text-indigo-600" />
-                Kategori
-              </h2>
-              <div className="space-y-2.5">
-                {weeklyCatData.map(([cat, count]) => {
-                  const c = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
-                  return (
-                    <div key={cat}>
-                      <div className="flex items-center justify-between text-xs mb-1">
-                        <span className={`font-medium ${c.text}`}>{cat}</span>
-                        <span className="text-gray-400 dark:text-gray-500">{count}</span>
+            {weeklyCatData.length > 0 && (
+              <>
+                <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mb-3">
+                  <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <CalendarCheck className="w-3.5 h-3.5" /> Kategori
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {weeklyCatData.map(([cat, count]) => {
+                    const c = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
+                    return (
+                      <div key={cat}>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className={`font-medium ${c.text}`}>{cat}</span>
+                          <span className="text-gray-400 dark:text-gray-500">{count}</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${c.bg}`}
+                            style={{ width: `${(count / maxWeeklyCat) * 100}%` }} />
+                        </div>
                       </div>
-                      <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all ${c.bg}`}
-                          style={{ width: `${(count / maxWeeklyCat) * 100}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Top topics */}
           {topWeeklyTags.length > 0 && (
@@ -284,9 +283,7 @@ export default function Dashboard() {
                   <span key={tag}
                     className="flex items-center gap-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-xs px-2.5 py-1 rounded-full">
                     {tag}
-                    <span className="bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-1 rounded-full text-[10px]">
-                      {count}
-                    </span>
+                    <span className="bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-1 rounded-full text-[10px]">{count}</span>
                   </span>
                 ))}
               </div>
@@ -295,55 +292,94 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Streak + Activity */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center">
-              <Flame className="w-5 h-5 text-orange-500" />
-            </div>
-            <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{streak}</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">hari berturut-turut</span>
+      {/* Weekly consistency + Source distribution */}
+      <div className="grid lg:grid-cols-3 gap-6">
+
+        {/* Weekly heatmap */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+                <CalendarDays className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500">
-                {streak === 0 ? "Buat catatan hari ini untuk memulai streak!"
-                  : streak >= 7 ? "Luar biasa! Pertahankan semangatmu 🔥"
-                  : "Terus semangat belajar!"}
-              </p>
+              <div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{weeklyStreak}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">pekan berturut-turut</span>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  {weeklyStreak === 0 ? "Isi catatan minggu ini untuk mulai streak!"
+                    : weeklyStreak >= 4 ? "Konsisten banget! Pertahankan 🔥"
+                    : "Terus isi tiap minggu!"}
+                </p>
+              </div>
             </div>
+            <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">24 minggu terakhir</span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-            <Zap className="w-3.5 h-3.5 text-yellow-500" />
-            <span>12 minggu terakhir</span>
+
+          {/* Weekly activity cells — 3 rows × 8 weeks */}
+          <div className="space-y-1.5">
+            {[0, 1, 2].map((row) => (
+              <div key={row} className="flex gap-1.5">
+                {weeklyActivityCells.slice(row * 8, row * 8 + 8).map((cell, i) => (
+                  <div key={i} title={cell.label + (cell.hasNote ? " ✓" : " —")}
+                    className={`flex-1 h-8 rounded-lg transition-colors flex items-center justify-center ${
+                      cell.hasNote
+                        ? "bg-purple-500 dark:bg-purple-500 text-white"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-600"
+                    }`}>
+                    {cell.hasNote
+                      ? <CheckCircle2 className="w-3.5 h-3.5" />
+                      : <span className="text-[9px] font-medium">{cell.weekNumber}</span>}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-purple-500 flex items-center justify-center">
+                <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+              </div>
+              <span>Ada catatan</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-700" />
+              <span>Tidak ada</span>
+            </div>
+            <span className="ml-auto">
+              {weeklyActivityCells.filter((c) => c.hasNote).length} dari 24 minggu terisi
+            </span>
           </div>
         </div>
 
-        {/* Activity grid */}
-        <div className="flex gap-0.5 overflow-x-auto pb-1">
-          <div className="flex flex-col gap-0.5 mr-1 shrink-0">
-            {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
-              <div key={d} className="h-3 text-[9px] text-gray-400 dark:text-gray-500 flex items-center w-6">{d}</div>
-            ))}
+        {/* Source distribution */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <PieChart className="w-4 h-4 text-amber-600" />
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Distribusi Sumber</h2>
           </div>
-          {Array.from({ length: 12 }, (_, week) => (
-            <div key={week} className="flex flex-col gap-0.5 shrink-0">
-              {Array.from({ length: 7 }, (_, day) => {
-                const cell = activityCells[week * 7 + day];
-                if (!cell) return <div key={day} className="w-3 h-3" />;
-                return (
-                  <div key={day} title={`${cell.date}: ${cell.count} catatan`}
-                    className={`w-3 h-3 rounded-sm ${activityColor(cell.count)}`} />
-                );
-              })}
+          {sources.length === 0 ? (
+            <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada sumber</p>
+          ) : (
+            <div className="space-y-3">
+              {sourceDistribution.map(({ label, count, color, bar }) => (
+                <div key={label}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className={`font-medium ${color}`}>{label}</span>
+                    <span className="text-gray-400 dark:text-gray-500">
+                      {count} · {Math.round((count / sources.length) * 100)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className={`h-full ${bar} rounded-full transition-all`}
+                      style={{ width: `${(count / sources.length) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="flex items-center gap-1.5 mt-3 text-xs text-gray-400 dark:text-gray-500">
-          <span>Sedikit</span>
-          {activityLegend.map((c) => <div key={c} className={`w-3 h-3 rounded-sm ${c}`} />)}
-          <span>Banyak</span>
+          )}
         </div>
       </div>
 
@@ -370,12 +406,9 @@ export default function Dashboard() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {recentNotes.map((note) => (
-              <div key={note.id}
-                className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div key={note.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                 <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                  note.type === "daily"
-                    ? "bg-blue-50 dark:bg-blue-900/30"
-                    : "bg-purple-50 dark:bg-purple-900/30"
+                  note.type === "daily" ? "bg-blue-50 dark:bg-blue-900/30" : "bg-purple-50 dark:bg-purple-900/30"
                 }`}>
                   {note.type === "daily"
                     ? <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
