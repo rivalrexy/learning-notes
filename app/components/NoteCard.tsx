@@ -24,6 +24,7 @@ interface Props {
   note: Note;
   onEdit?: (note: Note) => void;
   onDelete?: (id: string) => void;
+  accentColor?: string;
 }
 
 const srcPill: Record<string, string> = {
@@ -41,12 +42,12 @@ function SrcPillIcon({ type }: { type: string }) {
   return <HelpCircle className={cls} />;
 }
 
-export default function NoteCard({ note, onEdit, onDelete }: Props) {
+export default function NoteCard({ note, onEdit, onDelete, accentColor }: Props) {
   const [showPreview, setShowPreview] = useState(false);
 
-  const barCls = note.type === "daily"
+  const barCls = accentColor ?? (note.type === "daily"
     ? "bg-gradient-to-r from-blue-400 to-indigo-500"
-    : "bg-gradient-to-r from-purple-400 to-violet-500";
+    : "bg-gradient-to-r from-purple-400 to-violet-500");
 
   const handleDelete = () => {
     setShowPreview(false);

@@ -27,7 +27,8 @@ export default function TiptapEditor({ value, onChange, placeholder }: Props) {
     onUpdate: ({ editor }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const md = (editor.storage as unknown as { markdown: { getMarkdown: () => string } }).markdown;
-      onChange(md.getMarkdown());
+      // Strip GFM hard-break markers (\ at end of line) that tiptap-markdown emits
+      onChange(md.getMarkdown().replace(/\\\n/g, "\n"));
     },
     editorProps: {
       attributes: {

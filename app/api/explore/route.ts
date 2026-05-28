@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         sources: { select: { id: true, title: true, type: true, url: true } },
         user:    { select: { id: true, name: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { date: "desc" },
       take: 100,
     });
 

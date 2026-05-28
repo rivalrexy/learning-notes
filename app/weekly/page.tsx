@@ -8,7 +8,7 @@ import Pagination from "@/app/components/Pagination";
 import { formatDate, getWeekRange } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
 import DatePicker from "@/app/components/DatePicker";
-import { Plus, CalendarDays, Search, Loader2, LayoutGrid, List, Pencil, Trash2, X } from "lucide-react";
+import { Plus, CalendarDays, Search, Loader2, LayoutGrid, List, Pencil, Trash2, X, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 interface Source { id: string; title: string; type: string; url?: string; }
 interface Note {
@@ -19,6 +19,8 @@ interface Note {
 }
 
 type ViewMode = "card" | "table";
+type SortKey = "date" | "title" | "category";
+type SortDir = "asc" | "desc";
 const CARDS_PER_PAGE = 6;
 const ROWS_PER_PAGE  = 20;
 
@@ -34,6 +36,8 @@ export default function WeeklyPage() {
   const [filterCategory, setFilterCategory] = useState("");
   const [filterDate, setFilterDate]       = useState("");
   const [viewMode, setViewMode]           = useState<ViewMode>("card");
+  const [sortKey, setSortKey]             = useState<SortKey>("date");
+  const [sortDir, setSortDir]             = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -55,6 +59,16 @@ export default function WeeklyPage() {
 
   const setView = (v: ViewMode) => { setViewMode(v); localStorage.setItem("weekly-view", v); };
 
+  const handleSort = (key: SortKey) => {
+    setPage(1);
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("desc"); }
+  };
+  const SortIcon = ({ col }: { col: SortKey }) =>
+    sortKey === col
+      ? sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-indigo-500" /> : <ArrowDown className="w-3 h-3 text-indigo-500" />
+      : <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />;
+
   const handleSave = () => { setShowModal(false); setEditNote(null); load(); };
   const handleDelete = async (id: string) => {
     if (!confirm("Hapus catatan ini?")) return;
@@ -72,8 +86,15 @@ export default function WeeklyPage() {
     return true;
   });
 
-  const perPage   = viewMode === "card" ? CARDS_PER_PAGE : ROWS_PER_PAGE;
-  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
+  const perPage = viewMode === "card" ? CARDS_PER_PAGE : ROWS_PER_PAGE;
+  const sortedForTable = viewMode === "table" ? [...filtered].sort((a, b) => {
+    let cmp = 0;
+    if (sortKey === "date")     cmp = a.date.localeCompare(b.date);
+    if (sortKey === "title")    cmp = a.title.localeCompare(b.title, "id");
+    if (sortKey === "category") cmp = a.category.localeCompare(b.category, "id");
+    return sortDir === "asc" ? cmp : -cmp;
+  }) : filtered;
+  const paginated = sortedForTable.slice((page - 1) * perPage, page * perPage);
 
   const grouped = paginated.reduce<Record<string, Note[]>>((acc, note) => {
     const key = String(note.year ?? "");
@@ -198,10 +219,16 @@ export default function WeeklyPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">Kategori</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Judul</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-36 hidden sm:table-cell">Pekan</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">Tags</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">
+                    <button onClick={() => handleSort("category")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Kategori <SortIcon col="category" /></button>
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    <button onClick={() => handleSort("title")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Judul <SortIcon col="title" /></button>
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-36 hidden sm:table-cell">
+                    <button onClick={() => handleSort("date")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Pekan <SortIcon col="date" /></button>
+                  </th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">Tags</th>
                   <th className="w-20" />
                 </tr>
               </thead>
