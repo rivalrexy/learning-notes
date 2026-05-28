@@ -3,26 +3,50 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatDate, getWeekRange } from "@/app/lib/utils";
-import { Calendar, CalendarDays, Library, BookOpen, TrendingUp, FileText, Flame, Zap, BarChart2, PieChart } from "lucide-react";
+import {
+  Calendar,
+  CalendarDays,
+  Library,
+  BookOpen,
+  TrendingUp,
+  FileText,
+  Flame,
+  Zap,
+  BarChart2,
+  PieChart,
+} from "lucide-react";
 
 interface Note {
-  id: string; type: string; title: string; content: string;
-  date: string; weekNumber?: number; year?: number; tags: string[];
+  id: string;
+  type: string;
+  title: string;
+  content: string;
+  date: string;
+  weekNumber?: number;
+  year?: number;
+  tags: string[];
 }
-interface Source { id: string; type: string; title: string; }
+interface Source {
+  id: string;
+  type: string;
+  title: string;
+}
 
 function calcStreak(dailyNotes: Note[]): number {
   const dates = [...new Set(dailyNotes.map((n) => n.date))].sort().reverse();
   if (dates.length === 0) return 0;
 
   const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86_400_000)
+    .toISOString()
+    .split("T")[0];
   if (dates[0] !== today && dates[0] !== yesterday) return 0;
 
   let streak = 1;
   for (let i = 1; i < dates.length; i++) {
     const diff = Math.round(
-      (new Date(dates[i - 1]).getTime() - new Date(dates[i]).getTime()) / 86_400_000
+      (new Date(dates[i - 1]).getTime() - new Date(dates[i]).getTime()) /
+        86_400_000,
     );
     if (diff === 1) streak++;
     else break;
@@ -30,7 +54,9 @@ function calcStreak(dailyNotes: Note[]): number {
   return streak;
 }
 
-function getActivityCells(dailyNotes: Note[]): { date: string; count: number }[] {
+function getActivityCells(
+  dailyNotes: Note[],
+): { date: string; count: number }[] {
   const counts = dailyNotes.reduce<Record<string, number>>((acc, n) => {
     acc[n.date] = (acc[n.date] || 0) + 1;
     return acc;
@@ -71,15 +97,25 @@ function getMonthlyTrend(notes: Note[]) {
     const y = d.getFullYear();
     const m = d.getMonth();
     const monthKey = `${y}-${String(m + 1).padStart(2, "0")}`;
-    const daily = notes.filter((n) => n.type === "daily" && n.date.startsWith(monthKey)).length;
+    const daily = notes.filter(
+      (n) => n.type === "daily" && n.date.startsWith(monthKey),
+    ).length;
     const weekly = notes.filter((n) => {
       if (n.type !== "weekly" || !n.weekNumber || !n.year) return false;
       const jan4 = new Date(n.year, 0, 4);
       const dow = jan4.getDay() || 7;
-      const startOfWeek = new Date(n.year, 0, 4 - dow + 1 + (n.weekNumber - 1) * 7);
+      const startOfWeek = new Date(
+        n.year,
+        0,
+        4 - dow + 1 + (n.weekNumber - 1) * 7,
+      );
       return startOfWeek.getFullYear() === y && startOfWeek.getMonth() === m;
     }).length;
-    return { month: d.toLocaleString("id-ID", { month: "short" }), daily, weekly };
+    return {
+      month: d.toLocaleString("id-ID", { month: "short" }),
+      daily,
+      weekly,
+    };
   });
 }
 
@@ -101,11 +137,13 @@ export default function Dashboard() {
     Promise.all([
       fetch("/api/notes").then((r) => r.json()),
       fetch("/api/sources").then((r) => r.json()),
-    ]).then(([n, s]) => {
-      setNotes(Array.isArray(n) ? n : []);
-      setSources(Array.isArray(s) ? s : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    ])
+      .then(([n, s]) => {
+        setNotes(Array.isArray(n) ? n : []);
+        setSources(Array.isArray(s) ? s : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const dailyNotes = notes.filter((n) => n.type === "daily");
@@ -116,10 +154,37 @@ export default function Dashboard() {
   const activityCells = getActivityCells(dailyNotes);
 
   const stats = [
-    { label: "Catatan Harian", value: dailyNotes.length, icon: Calendar, color: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400", href: "/daily" },
-    { label: "Catatan Mingguan", value: weeklyNotes.length, icon: CalendarDays, color: "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400", href: "/weekly" },
-    { label: "Sumber Belajar", value: sources.length, icon: Library, color: "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400", href: "/sources" },
-    { label: "Total Catatan", value: notes.length, icon: FileText, color: "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400", href: "/" },
+    {
+      label: "Catatan Harian",
+      value: dailyNotes.length,
+      icon: Calendar,
+      color: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+      href: "/daily",
+    },
+    {
+      label: "Catatan Mingguan",
+      value: weeklyNotes.length,
+      icon: CalendarDays,
+      color:
+        "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
+      href: "/weekly",
+    },
+    {
+      label: "Sumber Belajar",
+      value: sources.length,
+      icon: Library,
+      color:
+        "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
+      href: "/sources",
+    },
+    {
+      label: "Total Catatan",
+      value: notes.length,
+      icon: FileText,
+      color:
+        "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400",
+      href: "/",
+    },
   ];
 
   const allTags = notes.flatMap((n) => n.tags);
@@ -127,18 +192,54 @@ export default function Dashboard() {
     acc[tag] = (acc[tag] || 0) + 1;
     return acc;
   }, {});
-  const topTags = Object.entries(tagCounts).sort(([, a], [, b]) => b - a).slice(0, 8);
+  const topTags = Object.entries(tagCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 8);
 
   const monthlyTrend = getMonthlyTrend(notes);
-  const maxMonthly = Math.max(...monthlyTrend.map((m) => m.daily + m.weekly), 1);
+  const maxMonthly = Math.max(
+    ...monthlyTrend.map((m) => m.daily + m.weekly),
+    1,
+  );
 
-  const sourceCounts: Record<string, number> = { youtube: 0, book: 0, article: 0, other: 0 };
-  sources.forEach((s) => { if (s.type in sourceCounts) sourceCounts[s.type]++; });
+  const sourceCounts: Record<string, number> = {
+    youtube: 0,
+    book: 0,
+    article: 0,
+    other: 0,
+  };
+  sources.forEach((s) => {
+    if (s.type in sourceCounts) sourceCounts[s.type]++;
+  });
   const sourceDistribution = [
-    { type: "youtube", label: "YouTube", count: sourceCounts.youtube, color: "text-red-600 dark:text-red-400", bar: "bg-red-400 dark:bg-red-500" },
-    { type: "book", label: "Buku", count: sourceCounts.book, color: "text-amber-600 dark:text-amber-400", bar: "bg-amber-400 dark:bg-amber-500" },
-    { type: "article", label: "Artikel", count: sourceCounts.article, color: "text-blue-600 dark:text-blue-400", bar: "bg-blue-400 dark:bg-blue-500" },
-    { type: "other", label: "Lainnya", count: sourceCounts.other, color: "text-gray-500 dark:text-gray-400", bar: "bg-gray-400 dark:bg-gray-500" },
+    {
+      type: "youtube",
+      label: "YouTube",
+      count: sourceCounts.youtube,
+      color: "text-red-600 dark:text-red-400",
+      bar: "bg-red-400 dark:bg-red-500",
+    },
+    {
+      type: "book",
+      label: "Buku",
+      count: sourceCounts.book,
+      color: "text-amber-600 dark:text-amber-400",
+      bar: "bg-amber-400 dark:bg-amber-500",
+    },
+    {
+      type: "article",
+      label: "Artikel",
+      count: sourceCounts.article,
+      color: "text-blue-600 dark:text-blue-400",
+      bar: "bg-blue-400 dark:bg-blue-500",
+    },
+    {
+      type: "other",
+      label: "Lainnya",
+      count: sourceCounts.other,
+      color: "text-gray-500 dark:text-gray-400",
+      bar: "bg-gray-400 dark:bg-gray-500",
+    },
   ];
 
   const dayOfWeekCounts = getDayOfWeekCounts(dailyNotes);
@@ -155,19 +256,33 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">Selamat datang di catatan belajarmu</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Dashboard
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
+          Selamat datang di catatan belajar kita
+        </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map(({ label, value, icon: Icon, color, href }) => (
-          <Link key={label} href={href} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
-            <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center mb-3`}>
+          <Link
+            key={label}
+            href={href}
+            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow"
+          >
+            <div
+              className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center mb-3`}
+            >
               <Icon className="w-5 h-5" />
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{label}</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              {value}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              {label}
+            </div>
           </Link>
         ))}
       </div>
@@ -178,35 +293,53 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center gap-2 mb-5">
             <BarChart2 className="w-4 h-4 text-indigo-600" />
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Tren Catatan 6 Bulan</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+              Tren Catatan 6 Bulan
+            </h2>
           </div>
           <div className="flex items-end gap-2">
             {monthlyTrend.map(({ month, daily, weekly }) => (
-              <div key={month} className="flex-1 flex flex-col items-center gap-1.5">
-                <div className="flex items-end gap-0.5 justify-center" style={{ height: "80px" }}>
+              <div
+                key={month}
+                className="flex-1 flex flex-col items-center gap-1.5"
+              >
+                <div
+                  className="flex items-end gap-0.5 justify-center"
+                  style={{ height: "80px" }}
+                >
                   <div
                     title={`Harian: ${daily}`}
                     className="w-4 bg-blue-400 dark:bg-blue-500 rounded-t-sm transition-all"
-                    style={{ height: `${Math.max((daily / maxMonthly) * 80, daily > 0 ? 4 : 0)}px` }}
+                    style={{
+                      height: `${Math.max((daily / maxMonthly) * 80, daily > 0 ? 4 : 0)}px`,
+                    }}
                   />
                   <div
                     title={`Mingguan: ${weekly}`}
                     className="w-4 bg-purple-400 dark:bg-purple-500 rounded-t-sm transition-all"
-                    style={{ height: `${Math.max((weekly / maxMonthly) * 80, weekly > 0 ? 4 : 0)}px` }}
+                    style={{
+                      height: `${Math.max((weekly / maxMonthly) * 80, weekly > 0 ? 4 : 0)}px`,
+                    }}
                   />
                 </div>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500">{month}</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                  {month}
+                </span>
               </div>
             ))}
           </div>
           <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-sm bg-blue-400 dark:bg-blue-500" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">Harian</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Harian
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-sm bg-purple-400 dark:bg-purple-500" />
-              <span className="text-xs text-gray-500 dark:text-gray-400">Mingguan</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Mingguan
+              </span>
             </div>
             <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
               Total: {notes.length} catatan
@@ -219,49 +352,66 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
             <div className="flex items-center gap-2 mb-4">
               <PieChart className="w-4 h-4 text-amber-600" />
-              <h2 className="font-semibold text-gray-900 dark:text-gray-100">Distribusi Sumber</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+                Distribusi Sumber
+              </h2>
             </div>
             {sources.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada sumber</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                Belum ada sumber
+              </p>
             ) : (
               <div className="space-y-3">
-                {sourceDistribution.map(({ type, label, count, color, bar }) => (
-                  <div key={type}>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className={`font-medium ${color}`}>{label}</span>
-                      <span className="text-gray-400 dark:text-gray-500">
-                        {count} · {Math.round((count / sources.length) * 100)}%
-                      </span>
+                {sourceDistribution.map(
+                  ({ type, label, count, color, bar }) => (
+                    <div key={type}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className={`font-medium ${color}`}>{label}</span>
+                        <span className="text-gray-400 dark:text-gray-500">
+                          {count} · {Math.round((count / sources.length) * 100)}
+                          %
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${bar} rounded-full transition-all`}
+                          style={{
+                            width: `${(count / sources.length) * 100}%`,
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${bar} rounded-full transition-all`}
-                        style={{ width: `${(count / sources.length) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             )}
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Aktivitas per Hari</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Aktivitas per Hari
+            </h2>
             <div className="space-y-1.5">
-              {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((day, i) => (
-                <div key={day} className="flex items-center gap-2">
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500 w-6 shrink-0">{day}</span>
-                  <div className="flex-1 h-3 bg-gray-100 dark:bg-gray-700 rounded-sm overflow-hidden">
-                    <div
-                      className="h-full bg-indigo-400 dark:bg-indigo-500 rounded-sm transition-all"
-                      style={{ width: `${(dayOfWeekCounts[i] / maxDayCount) * 100}%` }}
-                    />
+              {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map(
+                (day, i) => (
+                  <div key={day} className="flex items-center gap-2">
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500 w-6 shrink-0">
+                      {day}
+                    </span>
+                    <div className="flex-1 h-3 bg-gray-100 dark:bg-gray-700 rounded-sm overflow-hidden">
+                      <div
+                        className="h-full bg-indigo-400 dark:bg-indigo-500 rounded-sm transition-all"
+                        style={{
+                          width: `${(dayOfWeekCounts[i] / maxDayCount) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-[11px] text-gray-400 dark:text-gray-500 w-5 text-right shrink-0">
+                      {dayOfWeekCounts[i]}
+                    </span>
                   </div>
-                  <span className="text-[11px] text-gray-400 dark:text-gray-500 w-5 text-right shrink-0">
-                    {dayOfWeekCounts[i]}
-                  </span>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </div>
         </div>
@@ -276,15 +426,19 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{streak}</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">hari berturut-turut</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {streak}
+                </span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  hari berturut-turut
+                </span>
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500">
                 {streak === 0
                   ? "Buat catatan hari ini untuk memulai streak!"
                   : streak >= 7
-                  ? "Luar biasa! Pertahankan semangatmu 🔥"
-                  : "Terus semangat belajar!"}
+                    ? "Luar biasa! Pertahankan semangatmu 🔥"
+                    : "Terus semangat belajar!"}
               </p>
             </div>
           </div>
@@ -298,7 +452,12 @@ export default function Dashboard() {
         <div className="flex gap-0.5 flex-wrap overflow-x-auto">
           <div className="flex flex-col gap-0.5 mr-1">
             {["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"].map((d) => (
-              <div key={d} className="h-3 text-[9px] text-gray-400 dark:text-gray-500 flex items-center">{d}</div>
+              <div
+                key={d}
+                className="h-3 text-[9px] text-gray-400 dark:text-gray-500 flex items-center"
+              >
+                {d}
+              </div>
             ))}
           </div>
           {Array.from({ length: 12 }, (_, week) => (
@@ -336,33 +495,52 @@ export default function Dashboard() {
               <TrendingUp className="w-4 h-4 text-indigo-600" />
               Catatan Terbaru
             </h2>
-            <Link href="/daily" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Lihat semua</Link>
+            <Link
+              href="/daily"
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
+              Lihat semua
+            </Link>
           </div>
           {recentNotes.length === 0 ? (
             <div className="text-center py-12 text-gray-400 dark:text-gray-500">
               <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm">Belum ada catatan. Mulai tambahkan!</p>
-              <Link href="/daily" className="mt-3 inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+              <Link
+                href="/daily"
+                className="mt-3 inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
                 Buat catatan pertama
               </Link>
             </div>
           ) : (
             <div className="space-y-3">
               {recentNotes.map((note) => (
-                <div key={note.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${note.type === "daily" ? "bg-blue-50 dark:bg-blue-900/30" : "bg-purple-50 dark:bg-purple-900/30"}`}>
-                    {note.type === "daily"
-                      ? <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      : <CalendarDays className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
+                <div
+                  key={note.id}
+                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  <div
+                    className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${note.type === "daily" ? "bg-blue-50 dark:bg-blue-900/30" : "bg-purple-50 dark:bg-purple-900/30"}`}
+                  >
+                    {note.type === "daily" ? (
+                      <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    ) : (
+                      <CalendarDays className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{note.title}</p>
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                      {note.title}
+                    </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       {note.type === "weekly" && note.weekNumber
                         ? `Pekan ${note.weekNumber} · ${getWeekRange(note.weekNumber, note.year!)}`
                         : formatDate(note.date)}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{note.content}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                      {note.content}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -372,39 +550,67 @@ export default function Dashboard() {
 
         <div className="space-y-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Tag Populer</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Tag Populer
+            </h2>
             {topTags.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada tag</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                Belum ada tag
+              </p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {topTags.map(([tag, count]) => (
-                  <span key={tag} className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs px-2.5 py-1 rounded-full">
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs px-2.5 py-1 rounded-full"
+                  >
                     {tag}
-                    <span className="bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1 rounded-full text-[10px]">{count}</span>
+                    <span className="bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1 rounded-full text-[10px]">
+                      {count}
+                    </span>
                   </span>
                 ))}
               </div>
             )}
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Sumber Terbaru</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Sumber Terbaru
+            </h2>
             {sources.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada sumber</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                Belum ada sumber
+              </p>
             ) : (
               <div className="space-y-2">
                 {sources.slice(0, 5).map((s) => (
                   <div key={s.id} className="flex items-center gap-2">
-                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
-                      s.type === "youtube" ? "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400" : s.type === "book" ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" : "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                    }`}>
-                      {s.type === "youtube" ? "YT" : s.type === "book" ? "Buku" : "Art"}
+                    <span
+                      className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                        s.type === "youtube"
+                          ? "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                          : s.type === "book"
+                            ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                            : "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                      }`}
+                    >
+                      {s.type === "youtube"
+                        ? "YT"
+                        : s.type === "book"
+                          ? "Buku"
+                          : "Art"}
                     </span>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{s.title}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
+                      {s.title}
+                    </p>
                   </div>
                 ))}
               </div>
             )}
-            <Link href="/sources" className="mt-3 block text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+            <Link
+              href="/sources"
+              className="mt-3 block text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
               Kelola sumber belajar →
             </Link>
           </div>

@@ -7,15 +7,44 @@ import Pagination from "@/app/components/Pagination";
 import DatePicker from "@/app/components/DatePicker";
 import { formatDate, getWeekRange } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
-import { Globe, Search, Loader2, Users, ChevronDown, X, AlertCircle, LayoutGrid, List, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import {
+  Globe,
+  Search,
+  Loader2,
+  Users,
+  ChevronDown,
+  X,
+  AlertCircle,
+  LayoutGrid,
+  List,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 
-interface NoteSource { id: string; title: string; type: string; url?: string | null; }
-interface Author { id: string; name: string; }
+interface NoteSource {
+  id: string;
+  title: string;
+  type: string;
+  url?: string | null;
+}
+interface Author {
+  id: string;
+  name: string;
+}
 interface Note {
-  id: string; type: string; title: string; content: string;
-  date: string; weekNumber?: number; year?: number;
-  tags: string[]; category?: string; sources: NoteSource[];
-  isPublic: boolean; shareToken?: string | null;
+  id: string;
+  type: string;
+  title: string;
+  content: string;
+  date: string;
+  weekNumber?: number;
+  year?: number;
+  tags: string[];
+  category?: string;
+  sources: NoteSource[];
+  isPublic: boolean;
+  shareToken?: string | null;
   user: Author;
 }
 
@@ -23,12 +52,21 @@ type ViewMode = "card" | "table";
 type SortKey = "date" | "title" | "category" | "user";
 type SortDir = "asc" | "desc";
 const CARDS_PER_PAGE = 6;
-const ROWS_PER_PAGE  = 20;
+const ROWS_PER_PAGE = 20;
 
 const monthLabels: Record<string, string> = {
-  "01":"Januari","02":"Februari","03":"Maret","04":"April",
-  "05":"Mei","06":"Juni","07":"Juli","08":"Agustus",
-  "09":"September","10":"Oktober","11":"November","12":"Desember",
+  "01": "Januari",
+  "02": "Februari",
+  "03": "Maret",
+  "04": "April",
+  "05": "Mei",
+  "06": "Juni",
+  "07": "Juli",
+  "08": "Agustus",
+  "09": "September",
+  "10": "Oktober",
+  "11": "November",
+  "12": "Desember",
 };
 const formatMonth = (ym: string) => {
   const [year, month] = ym.split("-");
@@ -44,12 +82,17 @@ const ACCENT_GRADIENTS = [
   "bg-gradient-to-r from-cyan-400 to-sky-500",
 ];
 const ACCENT_DOT_COLORS = [
-  "bg-rose-400", "bg-blue-400", "bg-emerald-400",
-  "bg-violet-400", "bg-amber-400", "bg-cyan-400",
+  "bg-rose-400",
+  "bg-blue-400",
+  "bg-emerald-400",
+  "bg-violet-400",
+  "bg-amber-400",
+  "bg-cyan-400",
 ];
 function getAccentIndex(userId: string): number {
   let h = 0;
-  for (let i = 0; i < userId.length; i++) h = (h << 5) - h + userId.charCodeAt(i);
+  for (let i = 0; i < userId.length; i++)
+    h = (h << 5) - h + userId.charCodeAt(i);
   return Math.abs(h) % ACCENT_GRADIENTS.length;
 }
 function getAccentColor(userId: string): string {
@@ -57,19 +100,19 @@ function getAccentColor(userId: string): string {
 }
 
 export default function JelajahiPage() {
-  const [notes, setNotes]     = useState<Note[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [previewNote, setPreviewNote] = useState<Note | null>(null);
 
-  const [search, setSearch]                   = useState("");
-  const [filterUserId, setFilterUserId]       = useState<string>("");
-  const [filterCategory, setFilterCategory]   = useState("");
+  const [search, setSearch] = useState("");
+  const [filterUserId, setFilterUserId] = useState<string>("");
+  const [filterCategory, setFilterCategory] = useState("");
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [filterDate, setFilterDate]           = useState("");
-  const [viewMode, setViewMode]               = useState<ViewMode>("card");
-  const [sortKey, setSortKey]                 = useState<SortKey>("date");
-  const [sortDir, setSortDir]                 = useState<SortDir>("desc");
+  const [filterDate, setFilterDate] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("card");
+  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -89,51 +132,85 @@ export default function JelajahiPage() {
       .catch((err) => setError(err.message ?? "Terjadi kesalahan"))
       .finally(() => setLoading(false));
   };
-  useEffect(() => { fetchNotes(); }, []);
-  useEffect(() => { setPage(1); }, [search, filterUserId, filterCategory, filterDate, viewMode]);
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterUserId, filterCategory, filterDate, viewMode]);
 
-  const setView = (v: ViewMode) => { setViewMode(v); localStorage.setItem("jelajahi-view", v); };
+  const setView = (v: ViewMode) => {
+    setViewMode(v);
+    localStorage.setItem("jelajahi-view", v);
+  };
 
   const handleSort = (key: SortKey) => {
     setPage(1);
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(key); setSortDir("desc"); }
+    else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
   };
   const SortIcon = ({ col }: { col: SortKey }) =>
-    sortKey === col
-      ? sortDir === "asc" ? <ArrowUp className="w-3 h-3 text-indigo-500" /> : <ArrowDown className="w-3 h-3 text-indigo-500" />
-      : <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />;
+    sortKey === col ? (
+      sortDir === "asc" ? (
+        <ArrowUp className="w-3 h-3 text-indigo-500" />
+      ) : (
+        <ArrowDown className="w-3 h-3 text-indigo-500" />
+      )
+    ) : (
+      <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-gray-600" />
+    );
 
   const authors = useMemo<Author[]>(() => {
     const map = new Map<string, string>();
-    notes.forEach((n) => { if (n.user) map.set(n.user.id, n.user.name); });
+    notes.forEach((n) => {
+      if (n.user) map.set(n.user.id, n.user.name);
+    });
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [notes]);
 
   const usedCategories = useMemo(
-    () => [...new Set(notes.map((n) => n.category).filter(Boolean))] as string[],
-    [notes]
+    () =>
+      [...new Set(notes.map((n) => n.category).filter(Boolean))] as string[],
+    [notes],
   );
 
-  const filtered = useMemo(() => notes.filter((n) => {
-    const q = search.toLowerCase();
-    if (filterUserId   && n.user?.id !== filterUserId)        return false;
-    if (filterCategory && n.category !== filterCategory)      return false;
-    if (q && !n.title.toLowerCase().includes(q) && !n.content.toLowerCase().includes(q) && !n.tags.some((t) => t.includes(q))) return false;
-    if (filterDate     && n.date < filterDate)                return false;
-    return true;
-  }), [notes, search, filterUserId, filterCategory, filterDate]);
+  const filtered = useMemo(
+    () =>
+      notes.filter((n) => {
+        const q = search.toLowerCase();
+        if (filterUserId && n.user?.id !== filterUserId) return false;
+        if (filterCategory && n.category !== filterCategory) return false;
+        if (
+          q &&
+          !n.title.toLowerCase().includes(q) &&
+          !n.content.toLowerCase().includes(q) &&
+          !n.tags.some((t) => t.includes(q))
+        )
+          return false;
+        if (filterDate && n.date < filterDate) return false;
+        return true;
+      }),
+    [notes, search, filterUserId, filterCategory, filterDate],
+  );
 
   const perPage = viewMode === "card" ? CARDS_PER_PAGE : ROWS_PER_PAGE;
-  const sortedForTable = viewMode === "table" ? [...filtered].sort((a, b) => {
-    let cmp = 0;
-    if (sortKey === "date")     cmp = a.date.localeCompare(b.date);
-    if (sortKey === "title")    cmp = a.title.localeCompare(b.title, "id");
-    if (sortKey === "category") cmp = (a.category ?? "").localeCompare(b.category ?? "", "id");
-    if (sortKey === "user")     cmp = a.user.name.localeCompare(b.user.name, "id");
-    return sortDir === "asc" ? cmp : -cmp;
-  }) : filtered;
-  const paginated  = sortedForTable.slice((page - 1) * perPage, page * perPage);
+  const sortedForTable =
+    viewMode === "table"
+      ? [...filtered].sort((a, b) => {
+          let cmp = 0;
+          if (sortKey === "date") cmp = a.date.localeCompare(b.date);
+          if (sortKey === "title") cmp = a.title.localeCompare(b.title, "id");
+          if (sortKey === "category")
+            cmp = (a.category ?? "").localeCompare(b.category ?? "", "id");
+          if (sortKey === "user")
+            cmp = a.user.name.localeCompare(b.user.name, "id");
+          return sortDir === "asc" ? cmp : -cmp;
+        })
+      : filtered;
+  const paginated = sortedForTable.slice((page - 1) * perPage, page * perPage);
   const selectedAuthor = authors.find((a) => a.id === filterUserId);
 
   const grouped = paginated.reduce<Record<string, Note[]>>((acc, note) => {
@@ -151,11 +228,13 @@ export default function JelajahiPage() {
             <Globe className="w-6 h-6 text-indigo-600" />
             Jelajahi Catatan
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Temukan catatan belajar publik dari komunitas</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+            Tempatnya gudang ilmu kita
+          </p>
         </div>
         {!loading && (
           <p className="text-sm text-gray-400 dark:text-gray-500">
-            {filtered.length} catatan · {authors.length} pelajar
+            {filtered.length} catatan · {authors.length} user
           </p>
         )}
       </div>
@@ -164,7 +243,10 @@ export default function JelajahiPage() {
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-52">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari judul, isi, atau tag..."
             className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
@@ -172,36 +254,69 @@ export default function JelajahiPage() {
 
         {/* User filter dropdown */}
         <div className="relative">
-          <button onClick={() => setShowUserDropdown((v) => !v)}
-            className={`flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-lg border text-sm font-medium transition-colors ${filterUserId ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"}`}>
+          <button
+            onClick={() => setShowUserDropdown((v) => !v)}
+            className={`flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-lg border text-sm font-medium transition-colors ${filterUserId ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"}`}
+          >
             <Users className="w-4 h-4 shrink-0" />
-            <span className="max-w-32 truncate">{selectedAuthor ? selectedAuthor.name : "Semua Pelajar"}</span>
-            {filterUserId
-              ? <X className="w-3.5 h-3.5 shrink-0 opacity-80 hover:opacity-100" onClick={(e) => { e.stopPropagation(); setFilterUserId(""); setShowUserDropdown(false); }} />
-              : <ChevronDown className="w-3.5 h-3.5 shrink-0" />}
+            <span className="max-w-32 truncate">
+              {selectedAuthor ? selectedAuthor.name : "Semua"}
+            </span>
+            {filterUserId ? (
+              <X
+                className="w-3.5 h-3.5 shrink-0 opacity-80 hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFilterUserId("");
+                  setShowUserDropdown(false);
+                }}
+              />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+            )}
           </button>
           {showUserDropdown && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowUserDropdown(false)} />
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowUserDropdown(false)}
+              />
               <div className="absolute right-0 mt-1 w-56 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg z-20 py-1 max-h-60 overflow-y-auto">
-                <button onClick={() => { setFilterUserId(""); setShowUserDropdown(false); }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${!filterUserId ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
-                  <Globe className="w-4 h-4 shrink-0" /> Semua Pelajar
+                <button
+                  onClick={() => {
+                    setFilterUserId("");
+                    setShowUserDropdown(false);
+                  }}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${!filterUserId ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                >
+                  <Globe className="w-4 h-4 shrink-0" /> Semua
                 </button>
                 <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-                {authors.length === 0 && <p className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">Belum ada catatan publik</p>}
+                {authors.length === 0 && (
+                  <p className="px-3 py-2 text-xs text-gray-400 dark:text-gray-500">
+                    Belum ada catatan publik
+                  </p>
+                )}
                 {authors.map((a) => {
                   const count = notes.filter((n) => n.user.id === a.id).length;
                   return (
-                    <button key={a.id} onClick={() => { setFilterUserId(a.id); setShowUserDropdown(false); }}
-                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition-colors ${filterUserId === a.id ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium" : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+                    <button
+                      key={a.id}
+                      onClick={() => {
+                        setFilterUserId(a.id);
+                        setShowUserDropdown(false);
+                      }}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition-colors ${filterUserId === a.id ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium" : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                    >
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="w-6 h-6 bg-indigo-100 dark:bg-indigo-800 rounded-full flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-300 shrink-0">
                           {a.name.charAt(0).toUpperCase()}
                         </div>
                         <span className="truncate">{a.name}</span>
                       </div>
-                      <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">{count}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+                        {count}
+                      </span>
                     </button>
                   );
                 })}
@@ -212,12 +327,18 @@ export default function JelajahiPage() {
 
         {/* View toggle */}
         <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden shrink-0">
-          <button onClick={() => setView("card")} title="Tampilan kartu"
-            className={`p-2 transition-colors ${viewMode === "card" ? "bg-indigo-600 text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+          <button
+            onClick={() => setView("card")}
+            title="Tampilan kartu"
+            className={`p-2 transition-colors ${viewMode === "card" ? "bg-indigo-600 text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+          >
             <LayoutGrid className="w-4 h-4" />
           </button>
-          <button onClick={() => setView("table")} title="Tampilan tabel"
-            className={`p-2 transition-colors ${viewMode === "table" ? "bg-indigo-600 text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+          <button
+            onClick={() => setView("table")}
+            title="Tampilan tabel"
+            className={`p-2 transition-colors ${viewMode === "table" ? "bg-indigo-600 text-white" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+          >
             <List className="w-4 h-4" />
           </button>
         </div>
@@ -229,8 +350,10 @@ export default function JelajahiPage() {
           <DatePicker value={filterDate} onChange={setFilterDate} />
         </div>
         {filterDate && (
-          <button onClick={() => setFilterDate("")}
-            className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors">
+          <button
+            onClick={() => setFilterDate("")}
+            className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 transition-colors"
+          >
             <X className="w-3 h-3" /> Reset
           </button>
         )}
@@ -239,15 +362,22 @@ export default function JelajahiPage() {
       {/* Category filter pills */}
       {usedCategories.length > 0 && (
         <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setFilterCategory("")}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${!filterCategory ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+          <button
+            onClick={() => setFilterCategory("")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${!filterCategory ? "bg-indigo-600 text-white border-indigo-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+          >
             Semua Kategori
           </button>
           {usedCategories.map((cat) => {
             const c = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
             return (
-              <button key={cat} onClick={() => setFilterCategory(filterCategory === cat ? "" : cat)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${filterCategory === cat ? `${c.bg} ${c.text} border-current` : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+              <button
+                key={cat}
+                onClick={() =>
+                  setFilterCategory(filterCategory === cat ? "" : cat)
+                }
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${filterCategory === cat ? `${c.bg} ${c.text} border-current` : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+              >
                 {cat}
               </button>
             );
@@ -264,13 +394,24 @@ export default function JelajahiPage() {
                 {selectedAuthor.name.charAt(0).toUpperCase()}
               </div>
               {selectedAuthor.name}
-              <button onClick={() => setFilterUserId("")} className="ml-0.5 hover:text-indigo-900 dark:hover:text-indigo-100"><X className="w-3 h-3" /></button>
+              <button
+                onClick={() => setFilterUserId("")}
+                className="ml-0.5 hover:text-indigo-900 dark:hover:text-indigo-100"
+              >
+                <X className="w-3 h-3" />
+              </button>
             </span>
           )}
           {search && (
             <span className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium px-2.5 py-1 rounded-full">
-              <Search className="w-3 h-3" />&ldquo;{search}&rdquo;
-              <button onClick={() => setSearch("")} className="ml-0.5 hover:text-gray-900 dark:hover:text-gray-100"><X className="w-3 h-3" /></button>
+              <Search className="w-3 h-3" />
+              &ldquo;{search}&rdquo;
+              <button
+                onClick={() => setSearch("")}
+                className="ml-0.5 hover:text-gray-900 dark:hover:text-gray-100"
+              >
+                <X className="w-3 h-3" />
+              </button>
             </span>
           )}
         </div>
@@ -278,56 +419,91 @@ export default function JelajahiPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-24"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>
+        <div className="flex justify-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        </div>
       ) : error ? (
         <div className="flex flex-col items-center py-24 text-center gap-3">
           <AlertCircle className="w-10 h-10 text-red-400" />
           <p className="text-red-500 dark:text-red-400 font-medium">{error}</p>
-          <button onClick={fetchNotes} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Coba lagi</button>
+          <button
+            onClick={fetchNotes}
+            className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
+            Coba lagi
+          </button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-24 text-gray-400 dark:text-gray-500">
           <Globe className="w-12 h-12 mx-auto mb-4 opacity-25" />
-          <p className="text-base font-medium">{notes.length === 0 ? "Belum ada catatan publik" : "Tidak ada catatan yang cocok"}</p>
-          <p className="text-sm mt-1">{notes.length === 0 ? "Jadilah yang pertama berbagi catatan belajarmu!" : "Coba ubah filter atau kata kunci pencarian."}</p>
+          <p className="text-base font-medium">
+            {notes.length === 0
+              ? "Belum ada catatan publik"
+              : "Tidak ada catatan yang cocok"}
+          </p>
+          <p className="text-sm mt-1">
+            {notes.length === 0
+              ? "Jadilah yang pertama berbagi catatan belajarmu!"
+              : "Coba ubah filter atau kata kunci pencarian."}
+          </p>
         </div>
       ) : viewMode === "card" ? (
         <>
           {/* Author color legend */}
           {authors.length > 1 && (
             <div className="flex flex-wrap gap-3 items-center py-2 px-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
-              <span className="text-xs font-medium text-gray-400 dark:text-gray-500 shrink-0">Pelajar:</span>
+              <span className="text-xs font-medium text-gray-400 dark:text-gray-500 shrink-0">
+                User:
+              </span>
               {authors.map((a) => (
                 <div key={a.id} className="flex items-center gap-1.5">
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${ACCENT_DOT_COLORS[getAccentIndex(a.id)]}`} />
-                  <span className="text-xs text-gray-600 dark:text-gray-400">{a.name}</span>
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${ACCENT_DOT_COLORS[getAccentIndex(a.id)]}`}
+                  />
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                    {a.name}
+                  </span>
                 </div>
               ))}
             </div>
           )}
           <div className="space-y-8">
-            {Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([month, monthNotes]) => (
-              <div key={month}>
-                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{formatMonth(month)}</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {monthNotes.map((note) => (
-                    <div key={note.id}>
-                      {note.type === "weekly" && note.weekNumber && (
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold px-2.5 py-1 rounded-full">
-                            Pekan {note.weekNumber}
-                          </span>
-                          <span className="text-xs text-gray-400 dark:text-gray-500">{getWeekRange(note.weekNumber, note.year!)}</span>
-                        </div>
-                      )}
-                      <NoteCard note={note} accentColor={getAccentColor(note.user.id)} />
-                    </div>
-                  ))}
+            {Object.entries(grouped)
+              .sort(([a], [b]) => b.localeCompare(a))
+              .map(([month, monthNotes]) => (
+                <div key={month}>
+                  <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    {formatMonth(month)}
+                  </h2>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {monthNotes.map((note) => (
+                      <div key={note.id}>
+                        {note.type === "weekly" && note.weekNumber && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                              Pekan {note.weekNumber}
+                            </span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">
+                              {getWeekRange(note.weekNumber, note.year!)}
+                            </span>
+                          </div>
+                        )}
+                        <NoteCard
+                          note={note}
+                          accentColor={getAccentColor(note.user.id)}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
-          <Pagination page={page} total={filtered.length} perPage={perPage} onChange={setPage} />
+          <Pagination
+            page={page}
+            total={filtered.length}
+            perPage={perPage}
+            onChange={setPage}
+          />
         </>
       ) : (
         <>
@@ -337,52 +513,96 @@ export default function JelajahiPage() {
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <th className="w-1 p-0" />
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">
-                    <button onClick={() => handleSort("category")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Kategori <SortIcon col="category" /></button>
+                    <button
+                      onClick={() => handleSort("category")}
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    >
+                      Kategori <SortIcon col="category" />
+                    </button>
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                    <button onClick={() => handleSort("title")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Judul <SortIcon col="title" /></button>
+                    <button
+                      onClick={() => handleSort("title")}
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    >
+                      Judul <SortIcon col="title" />
+                    </button>
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-36 hidden sm:table-cell">
-                    <button onClick={() => handleSort("date")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Tanggal / Pekan <SortIcon col="date" /></button>
+                    <button
+                      onClick={() => handleSort("date")}
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    >
+                      Tanggal / Pekan <SortIcon col="date" />
+                    </button>
                   </th>
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden md:table-cell">
-                    <button onClick={() => handleSort("user")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Pelajar <SortIcon col="user" /></button>
+                    <button
+                      onClick={() => handleSort("user")}
+                      className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    >
+                      User <SortIcon col="user" />
+                    </button>
                   </th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden lg:table-cell">Tags</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hidden lg:table-cell">
+                    Tags
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {paginated.map((note) => {
                   const cat = note.category || "Lainnya";
-                  const c   = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
-                  const accentIdx = note.user ? getAccentIndex(note.user.id) : 0;
+                  const c = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
+                  const accentIdx = note.user
+                    ? getAccentIndex(note.user.id)
+                    : 0;
                   return (
-                    <tr key={note.id}
+                    <tr
+                      key={note.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
-                      onClick={() => setPreviewNote(note)}>
+                      onClick={() => setPreviewNote(note)}
+                    >
                       {/* User accent strip */}
-                      <td className={`p-0 w-1 ${ACCENT_DOT_COLORS[accentIdx]}`} />
+                      <td
+                        className={`p-0 w-1 ${ACCENT_DOT_COLORS[accentIdx]}`}
+                      />
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{cat}</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}
+                        >
+                          {cat}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{note.title}</p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 mt-0.5">{note.content.replace(/[#*`>_]/g, "").slice(0, 80)}</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100 line-clamp-1">
+                          {note.title}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1 mt-0.5">
+                          {note.content.replace(/[#*`>_]/g, "").slice(0, 80)}
+                        </p>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                         {note.type === "weekly" && note.weekNumber ? (
                           <div>
-                            <div className="font-medium text-purple-600 dark:text-purple-400">Pekan {note.weekNumber}</div>
-                            <div className="text-gray-400 mt-0.5">{getWeekRange(note.weekNumber, note.year!)}</div>
+                            <div className="font-medium text-purple-600 dark:text-purple-400">
+                              Pekan {note.weekNumber}
+                            </div>
+                            <div className="text-gray-400 mt-0.5">
+                              {getWeekRange(note.weekNumber, note.year!)}
+                            </div>
                           </div>
                         ) : (
-                          <span className="whitespace-nowrap">{formatDate(note.date)}</span>
+                          <span className="whitespace-nowrap">
+                            {formatDate(note.date)}
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         {note.user && (
                           <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${ACCENT_DOT_COLORS[getAccentIndex(note.user.id)]}`} />
+                            <span
+                              className={`w-2.5 h-2.5 rounded-full shrink-0 ${ACCENT_DOT_COLORS[getAccentIndex(note.user.id)]}`}
+                            />
                             {note.user.name}
                           </div>
                         )}
@@ -390,9 +610,18 @@ export default function JelajahiPage() {
                       <td className="px-4 py-3 hidden lg:table-cell">
                         <div className="flex gap-1 flex-wrap">
                           {note.tags.slice(0, 2).map((t) => (
-                            <span key={t} className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full">#{t}</span>
+                            <span
+                              key={t}
+                              className="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full"
+                            >
+                              #{t}
+                            </span>
                           ))}
-                          {note.tags.length > 2 && <span className="text-xs text-gray-400">+{note.tags.length - 2}</span>}
+                          {note.tags.length > 2 && (
+                            <span className="text-xs text-gray-400">
+                              +{note.tags.length - 2}
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -401,7 +630,12 @@ export default function JelajahiPage() {
               </tbody>
             </table>
           </div>
-          <Pagination page={page} total={filtered.length} perPage={perPage} onChange={setPage} />
+          <Pagination
+            page={page}
+            total={filtered.length}
+            perPage={perPage}
+            onChange={setPage}
+          />
         </>
       )}
 
