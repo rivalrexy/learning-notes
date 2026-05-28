@@ -84,7 +84,7 @@ export default function Dashboard() {
 
   const dailyNotes  = notes.filter((n) => n.type === "daily");
   const weeklyNotes = notes.filter((n) => n.type === "weekly");
-  const recentNotes = notes.slice(0, 6);
+  const recentNotes = notes.slice(0, 8);
 
   // Weekly activity
   const weeklyStreak       = calcWeeklyStreak(weeklyNotes);
@@ -109,6 +109,14 @@ export default function Dashboard() {
   const topWeeklyTags = Object.entries(weeklyTagCounts)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 8);
+
+  // Monthly progress: weekly notes per month this year
+  const monthlyData = Array.from({ length: 12 }, (_, m) => {
+    const monthStr = `${currentYear}-${String(m + 1).padStart(2, "0")}`;
+    const count = weeklyNotes.filter((n) => n.year === currentYear && n.date.startsWith(monthStr)).length;
+    return { month: new Date(currentYear, m, 1).toLocaleString("id-ID", { month: "short" }), count };
+  });
+  const maxMonthlyCount = Math.max(...monthlyData.map((m) => m.count), 1);
 
   // Source distribution
   const sourceCounts: Record<string, number> = { youtube: 0, book: 0, article: 0, other: 0 };
@@ -156,143 +164,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Weekly spotlight */}
-      <div className="grid lg:grid-cols-3 gap-6">
-
-        {/* Recent weekly notes */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-purple-600" />
-              Catatan Mingguan Terbaru
-            </h2>
-            <Link href="/weekly" className="flex items-center gap-0.5 text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
-              Lihat semua <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          {weeklyNotes.length === 0 ? (
-            <div className="text-center py-12 text-gray-400 dark:text-gray-500">
-              <CalendarDays className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Belum ada catatan mingguan.</p>
-              <Link href="/weekly" className="mt-2 inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
-                Buat catatan pertama
-              </Link>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 gap-3">
-              {weeklyNotes.slice(0, 4).map((note) => {
-                const cat = note.category ?? "Lainnya";
-                const c   = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
-                return (
-                  <div key={note.id}
-                    className="rounded-xl border border-gray-100 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700/30 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 hover:border-purple-200 dark:hover:border-purple-800 transition-colors flex flex-col gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {note.weekNumber && (
-                        <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
-                          Pekan {note.weekNumber}
-                        </span>
-                      )}
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${c.bg} ${c.text}`}>{cat}</span>
-                    </div>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-2 leading-snug">{note.title}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed flex-1">
-                      {note.content.replace(/[#*`>_\[\]]/g, "").slice(0, 120)}
-                    </p>
-                    {note.tags.length > 0 && (
-                      <div className="flex gap-1 flex-wrap">
-                        {note.tags.slice(0, 3).map((t) => (
-                          <span key={t} className="text-[10px] bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded-full">
-                            #{t}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">
-                      {note.weekNumber && note.year ? getWeekRange(note.weekNumber, note.year) : formatDate(note.date)}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Weekly stats sidebar */}
-        <div className="space-y-4">
-          {/* Summary + category breakdown in one card */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-              <Award className="w-4 h-4 text-purple-600" />
-              Ringkasan Mingguan
-            </h2>
-            <div className="space-y-2.5 mb-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Total pekan</span>
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{weeklyNotes.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Tahun {currentYear}</span>
-                <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">{weeklyThisYear} pekan</span>
-              </div>
-              {latestWeekly?.weekNumber && latestWeekly.year && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Terakhir</span>
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Pekan {latestWeekly.weekNumber}</span>
-                </div>
-              )}
-            </div>
-
-            {weeklyCatData.length > 0 && (
-              <>
-                <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mb-3">
-                  <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
-                    <CalendarCheck className="w-3.5 h-3.5" /> Kategori
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  {weeklyCatData.map(([cat, count]) => {
-                    const c = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
-                    return (
-                      <div key={cat}>
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className={`font-medium ${c.text}`}>{cat}</span>
-                          <span className="text-gray-400 dark:text-gray-500">{count}</span>
-                        </div>
-                        <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${c.bg}`}
-                            style={{ width: `${(count / maxWeeklyCat) * 100}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Top topics */}
-          {topWeeklyTags.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-              <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                <Tag className="w-4 h-4 text-indigo-600" />
-                Topik Mingguan
-              </h2>
-              <div className="flex flex-wrap gap-1.5">
-                {topWeeklyTags.map(([tag, count]) => (
-                  <span key={tag}
-                    className="flex items-center gap-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-xs px-2.5 py-1 rounded-full">
-                    {tag}
-                    <span className="bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-1 rounded-full text-[10px]">{count}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Weekly consistency + Source distribution */}
+      {/* Weekly consistency + Ringkasan Mingguan */}
       <div className="grid lg:grid-cols-3 gap-6">
 
         {/* Weekly heatmap */}
@@ -354,33 +226,128 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Source distribution */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <PieChart className="w-4 h-4 text-amber-600" />
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Distribusi Sumber</h2>
+        {/* Ringkasan Mingguan sidebar */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-5">
+
+          {/* Summary numbers */}
+          <div>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+              <Award className="w-4 h-4 text-purple-600" />
+              Ringkasan Mingguan
+            </h2>
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Total pekan</span>
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{weeklyNotes.length}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Tahun {currentYear}</span>
+                <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">{weeklyThisYear} pekan</span>
+              </div>
+              {latestWeekly?.weekNumber && latestWeekly.year && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Terakhir</span>
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Pekan {latestWeekly.weekNumber}</span>
+                </div>
+              )}
+            </div>
           </div>
-          {sources.length === 0 ? (
-            <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada sumber</p>
-          ) : (
-            <div className="space-y-3">
-              {sourceDistribution.map(({ label, count, color, bar }) => (
-                <div key={label}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className={`font-medium ${color}`}>{label}</span>
-                    <span className="text-gray-400 dark:text-gray-500">
-                      {count} · {Math.round((count / sources.length) * 100)}%
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div className={`h-full ${bar} rounded-full transition-all`}
-                      style={{ width: `${(count / sources.length) * 100}%` }} />
-                  </div>
+
+          {/* Category breakdown */}
+          {weeklyCatData.length > 0 && (
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
+              <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                <CalendarCheck className="w-3.5 h-3.5" /> Kategori
+              </p>
+              <div className="space-y-2">
+                {weeklyCatData.map(([cat, count]) => {
+                  const c = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
+                  return (
+                    <div key={cat}>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className={`font-medium ${c.text}`}>{cat}</span>
+                        <span className="text-gray-400 dark:text-gray-500">{count}</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${c.bg}`}
+                          style={{ width: `${(count / maxWeeklyCat) * 100}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Monthly progress bar chart */}
+          <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
+            <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">
+              Per Bulan · {currentYear}
+            </p>
+            <div className="flex items-end gap-1" style={{ height: "48px" }}>
+              {monthlyData.map(({ month, count }) => (
+                <div key={month} className="flex-1 flex flex-col items-center gap-1 group relative">
+                  {count > 0 && (
+                    <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 hidden group-hover:block bg-gray-900 dark:bg-gray-700 text-white text-[10px] rounded px-1.5 py-0.5 whitespace-nowrap shadow-md z-10">
+                      {count} pekan
+                    </div>
+                  )}
+                  <div
+                    className={`w-full rounded-t-sm transition-all ${count > 0 ? "bg-indigo-400 dark:bg-indigo-500" : "bg-gray-100 dark:bg-gray-700"}`}
+                    style={{ height: `${count > 0 ? Math.max(Math.round((count / maxMonthlyCount) * 36), 4) : 3}px` }}
+                  />
+                  <span className="text-[7px] text-gray-400 dark:text-gray-600 leading-none">{month.slice(0, 3)}</span>
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Top tags */}
+          {topWeeklyTags.length > 0 && (
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
+              <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5" /> Topik
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {topWeeklyTags.slice(0, 8).map(([tag, count]) => (
+                  <span key={tag}
+                    className="flex items-center gap-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 text-xs px-2 py-0.5 rounded-full">
+                    {tag}
+                    <span className="bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 px-1 rounded-full text-[10px]">{count}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
+      </div>
+
+      {/* Source distribution — full width */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center gap-2 mb-5">
+          <PieChart className="w-4 h-4 text-amber-600" />
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Distribusi Sumber</h2>
+          <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{sources.length} sumber total</span>
+        </div>
+        {sources.length === 0 ? (
+          <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada sumber</p>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            {sourceDistribution.map(({ label, count, color, bar }) => (
+              <div key={label} className="flex flex-col gap-2">
+                <div className={`text-3xl font-bold ${color}`}>{count}</div>
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</div>
+                <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className={`h-full ${bar} rounded-full transition-all`}
+                    style={{ width: `${(count / sources.length) * 100}%` }} />
+                </div>
+                <div className="text-xs text-gray-400 dark:text-gray-500">
+                  {Math.round((count / sources.length) * 100)}% dari total
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Recent notes */}
