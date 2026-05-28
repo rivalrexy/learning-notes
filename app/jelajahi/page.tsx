@@ -335,6 +335,7 @@ export default function JelajahiPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+                  <th className="w-1 p-0" />
                   <th className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide w-32">
                     <button onClick={() => handleSort("category")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">Kategori <SortIcon col="category" /></button>
                   </th>
@@ -354,10 +355,13 @@ export default function JelajahiPage() {
                 {paginated.map((note) => {
                   const cat = note.category || "Lainnya";
                   const c   = CATEGORY_COLOR[cat] ?? CATEGORY_COLOR["Lainnya"];
+                  const accentIdx = note.user ? getAccentIndex(note.user.id) : 0;
                   return (
                     <tr key={note.id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
                       onClick={() => setPreviewNote(note)}>
+                      {/* User accent strip */}
+                      <td className={`p-0 w-1 ${ACCENT_DOT_COLORS[accentIdx]}`} />
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{cat}</span>
                       </td>
