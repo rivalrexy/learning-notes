@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
-import { Bold, Italic, Hash, List, ListOrdered, Quote, Code, Minus, ListIndentIncrease, ListIndentDecrease } from "lucide-react";
+import { Bold, Italic, Hash, List, ListOrdered, Quote, Code, Minus, ListIndentIncrease, ListIndentDecrease, Wand2 } from "lucide-react";
 import EmojiPicker from "@/app/components/EmojiPicker";
 
 interface Props {
@@ -40,6 +40,18 @@ export default function TiptapEditor({ value, onChange, placeholder }: Props) {
 
   const isActive = (name: string, attrs?: Record<string, unknown>) =>
     editor?.isActive(name, attrs) ?? false;
+
+  const autoFormat = () => {
+    if (!editor) return;
+    const mdStorage = (editor.storage as unknown as { markdown: { getMarkdown: () => string } }).markdown;
+    const raw = mdStorage.getMarkdown()
+      .replace(/\\\n/g, "\n")
+      .replace(/^\\([-*+]) /gm, "$1 ")
+      .replace(/^\\(\d+\.) /gm, "$1 ")
+      .replace(/^\\(#{1,6} )/gm, "$1");
+    editor.commands.setContent(raw);
+    onChange(raw);
+  };
 
   const toolBtn = (active: boolean) =>
     `p-1.5 rounded-md transition-colors ${
@@ -84,6 +96,12 @@ export default function TiptapEditor({ value, onChange, placeholder }: Props) {
         </button>
         <button type="button" title="Divider" onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().setHorizontalRule().run(); }} className={toolBtn(false)}>
           <Minus className="w-3.5 h-3.5" />
+        </button>
+        <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-1" />
+        <button type="button" title="Auto format — perbaiki format otomatis"
+          onMouseDown={(e) => { e.preventDefault(); autoFormat(); }}
+          className="p-1.5 rounded-md transition-colors text-amber-500 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20">
+          <Wand2 className="w-3.5 h-3.5" />
         </button>
         <div className="w-px h-4 bg-gray-200 dark:bg-gray-600 mx-1" />
         <EmojiPicker
