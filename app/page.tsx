@@ -175,77 +175,75 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Weekly consistency + Ringkasan Mingguan */}
-      <div className="grid lg:grid-cols-3 gap-6">
-
-        {/* Weekly heatmap */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-                <CalendarDays className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{weeklyStreak}</span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">pekan berturut-turut</span>
-                </div>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  {weeklyStreak === 0 ? "Isi catatan minggu ini untuk mulai streak!"
-                    : weeklyStreak >= 4 ? "Konsisten banget! Pertahankan 🔥"
-                    : "Terus isi tiap minggu!"}
-                </p>
-              </div>
+      {/* Weekly consistency — full width */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+              <CalendarDays className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">48 minggu terakhir</span>
-          </div>
-
-          {/* Weekly activity cells — 4 rows × 12 weeks */}
-          <div className="space-y-1">
-            {[0, 1, 2, 3].map((row) => (
-              <div key={row} className="flex gap-1">
-                {weeklyActivityCells.slice(row * 12, row * 12 + 12).map((cell, i) => {
-                  const note = weeklyNoteLookup[`${cell.year}-${cell.weekNumber}`] ?? null;
-                  return (
-                    <div key={i}
-                      title={cell.label + (cell.hasNote ? " ✓" : " —")}
-                      onClick={() => note && setPreviewNote(note)}
-                      className={`flex-1 h-7 rounded-md transition-colors flex items-center justify-center ${
-                        cell.hasNote
-                          ? "bg-purple-500 dark:bg-purple-500 text-white cursor-pointer hover:bg-purple-600 dark:hover:bg-purple-400"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-600"
-                      }`}>
-                      {cell.hasNote
-                        ? <CheckCircle2 className="w-3 h-3" />
-                        : <span className="text-[8px] font-medium">{cell.weekNumber}</span>}
-                    </div>
-                  );
-                })}
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{weeklyStreak}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">pekan berturut-turut</span>
               </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-purple-500 flex items-center justify-center">
-                <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-              </div>
-              <span>Ada catatan · klik untuk buka</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {weeklyStreak === 0 ? "Isi catatan minggu ini untuk mulai streak!"
+                  : weeklyStreak >= 4 ? "Konsisten banget! Pertahankan 🔥"
+                  : "Terus isi tiap minggu!"}
+              </p>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-700" />
-              <span>Tidak ada</span>
-            </div>
-            <span className="ml-auto">
-              {weeklyActivityCells.filter((c) => c.hasNote).length} dari 48 minggu terisi
-            </span>
           </div>
+          <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">48 minggu terakhir</span>
         </div>
 
-        {/* Ringkasan Mingguan sidebar */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-5">
+        {/* Weekly activity cells — 4 rows × 12 weeks */}
+        <div className="space-y-1">
+          {[0, 1, 2, 3].map((row) => (
+            <div key={row} className="flex gap-1">
+              {weeklyActivityCells.slice(row * 12, row * 12 + 12).map((cell, i) => {
+                const note = weeklyNoteLookup[`${cell.year}-${cell.weekNumber}`] ?? null;
+                return (
+                  <div key={i}
+                    title={cell.label + (cell.hasNote ? " ✓" : " —")}
+                    onClick={() => note && setPreviewNote(note)}
+                    className={`flex-1 h-8 rounded-lg transition-colors flex items-center justify-center ${
+                      cell.hasNote
+                        ? "bg-purple-500 text-white cursor-pointer hover:bg-purple-600 dark:hover:bg-purple-400"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-300 dark:text-gray-600"
+                    }`}>
+                    {cell.hasNote
+                      ? <CheckCircle2 className="w-3.5 h-3.5" />
+                      : <span className="text-[9px] font-medium">{cell.weekNumber}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
 
-          {/* Summary numbers */}
+        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-purple-500 flex items-center justify-center">
+              <CheckCircle2 className="w-2.5 h-2.5 text-white" />
+            </div>
+            <span>Ada catatan · klik untuk buka</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-700" />
+            <span>Tidak ada</span>
+          </div>
+          <span className="ml-auto">
+            {weeklyActivityCells.filter((c) => c.hasNote).length} dari 48 minggu terisi
+          </span>
+        </div>
+      </div>
+
+      {/* Ringkasan Mingguan + Distribusi Sumber */}
+      <div className="grid lg:grid-cols-3 gap-6">
+
+        {/* Ringkasan Mingguan */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-5">
           <div>
             <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
               <Award className="w-4 h-4 text-purple-600" />
@@ -269,7 +267,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Category breakdown */}
           {weeklyCatData.length > 0 && (
             <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
               <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
@@ -295,7 +292,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Monthly progress bar chart */}
           <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
             <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">
               Per Bulan · {currentYear}
@@ -318,7 +314,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Top tags */}
           {topWeeklyTags.length > 0 && (
             <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
               <p className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
@@ -336,34 +331,34 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-      </div>
 
-      {/* Source distribution — full width */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center gap-2 mb-5">
-          <PieChart className="w-4 h-4 text-amber-600" />
-          <h2 className="font-semibold text-gray-900 dark:text-gray-100">Distribusi Sumber</h2>
-          <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{sources.length} sumber total</span>
-        </div>
-        {sources.length === 0 ? (
-          <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada sumber</p>
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {sourceDistribution.map(({ label, count, color, bar }) => (
-              <div key={label} className="flex flex-col gap-2">
-                <div className={`text-3xl font-bold ${color}`}>{count}</div>
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</div>
-                <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className={`h-full ${bar} rounded-full transition-all`}
-                    style={{ width: `${(count / sources.length) * 100}%` }} />
-                </div>
-                <div className="text-xs text-gray-400 dark:text-gray-500">
-                  {Math.round((count / sources.length) * 100)}% dari total
-                </div>
-              </div>
-            ))}
+        {/* Distribusi Sumber */}
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <PieChart className="w-4 h-4 text-amber-600" />
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">Distribusi Sumber</h2>
+            <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{sources.length} sumber total</span>
           </div>
-        )}
+          {sources.length === 0 ? (
+            <p className="text-sm text-gray-400 dark:text-gray-500">Belum ada sumber</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-6">
+              {sourceDistribution.map(({ label, count, color, bar }) => (
+                <div key={label} className="flex flex-col gap-2">
+                  <div className={`text-3xl font-bold ${color}`}>{count}</div>
+                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</div>
+                  <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className={`h-full ${bar} rounded-full transition-all`}
+                      style={{ width: `${(count / sources.length) * 100}%` }} />
+                  </div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500">
+                    {Math.round((count / sources.length) * 100)}% dari total
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Recent notes */}
