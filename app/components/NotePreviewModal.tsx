@@ -22,6 +22,7 @@ interface Props {
   showActions?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
+  onShareToggle?: (isPublic: boolean, token: string | null) => void;
   onClose: () => void;
 }
 
@@ -64,7 +65,7 @@ function SrcIcon({ type }: { type: string }) {
   return <HelpCircle className={`${cls} text-gray-400`} />;
 }
 
-export default function NotePreviewModal({ note, showActions, onEdit, onDelete, onClose }: Props) {
+export default function NotePreviewModal({ note, showActions, onEdit, onDelete, onShareToggle, onClose }: Props) {
   const c = note.type === "daily"
     ? { badge: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300", bar: "from-blue-400 to-indigo-500" }
     : { badge: "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300", bar: "from-purple-400 to-violet-500" };
@@ -112,8 +113,9 @@ export default function NotePreviewModal({ note, showActions, onEdit, onDelete, 
               <>
                 <ShareButton
                   noteId={note.id}
-                  initialIsPublic={note.isPublic ?? false}
-                  initialToken={note.shareToken ?? null}
+                  isPublic={note.isPublic ?? false}
+                  token={note.shareToken ?? null}
+                  onToggle={(p, t) => onShareToggle?.(p, t)}
                 />
                 {onEdit && (
                   <button

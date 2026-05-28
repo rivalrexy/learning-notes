@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { formatDate, getYouTubeThumbnail } from "@/app/lib/utils";
 import { CATEGORY_COLOR } from "@/app/lib/categories";
@@ -45,9 +45,24 @@ function SrcPillIcon({ type }: { type: string }) {
 export default function NoteCard({ note, onEdit, onDelete, accentColor }: Props) {
   const [showPreview, setShowPreview] = useState(false);
 
-  const barCls = accentColor ?? (note.type === "daily"
+  // Local share state so toggling inside the modal persists across open/close cycles
+  const [shareIsPublic, setShareIsPublic] = useState(note.isPublic ?? false);
+  const [shareToken, setShareToken]       = useState<string | null>(note.shareToken ?? null);
+
+  // Sync when the parent refreshes note data (e.g. after bulk share)
+  useEffect(() => {
+    setShareIsPublic(note.isPublic ?? false);
+    setShareToken(note.shareToken ?? null);
+  }, [note.isPublic, note.shareToken]);
+
+  const handleShareToggle = (p: boolean, t: string | null) => {
+    setShareIsPublic(p);
+    setShareToken(t);
+  };
+
+  const typeBg = note.type === "daily"
     ? "bg-gradient-to-r from-blue-400 to-indigo-500"
-    : "bg-gradient-to-r from-purple-400 to-violet-500");
+    : "bg-gradient-to-r from-purple-400 to-violet-500";
 
   const handleDelete = () => {
     setShowPreview(false);
@@ -60,10 +75,14 @@ export default function NoteCard({ note, onEdit, onDelete, accentColor }: Props)
         onClick={() => setShowPreview(true)}
         className="group relative bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-700 transition-all duration-200 cursor-pointer flex flex-col"
       >
-        {/* Type colour bar */}
-        <div className={`h-1 w-full shrink-0 ${barCls}`} />
+        {/* Accent: left strip when user-colour is provided, top bar for type colour */}
+        {accentColor ? (
+          <div className={`absolute inset-y-0 left-0 w-1.5 shrink-0 ${accentColor}`} />
+        ) : (
+          <div className={`h-1 w-full shrink-0 ${typeBg}`} />
+        )}
 
-        <div className="p-5 flex flex-col flex-1 gap-3">
+        <div className={`flex flex-col flex-1 gap-3 ${accentColor ? "p-5 pl-7" : "p-5"}`}>
 
           {/* Title + actions row */}
           <div className="flex items-start justify-between gap-2">
@@ -105,8 +124,9 @@ export default function NoteCard({ note, onEdit, onDelete, accentColor }: Props)
               <div className="flex gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                 <ShareButton
                   noteId={note.id}
-                  initialIsPublic={note.isPublic ?? false}
-                  initialToken={note.shareToken ?? null}
+                  isPublic={shareIsPublic}
+                  token={shareToken}
+                  onToggle={handleShareToggle}
                 />
                 {onEdit && (
                   <button
@@ -191,10 +211,11 @@ export default function NoteCard({ note, onEdit, onDelete, accentColor }: Props)
 
       {showPreview && (
         <NotePreviewModal
-          note={note}
+          note={{ ...note, isPublic: shareIsPublic, shareToken }}
           showActions={!!(onEdit || onDelete)}
           onEdit={onEdit ? () => { setShowPreview(false); onEdit(note); } : undefined}
           onDelete={onDelete ? handleDelete : undefined}
+          onShareToggle={handleShareToggle}
           onClose={() => setShowPreview(false)}
         />
       )}
