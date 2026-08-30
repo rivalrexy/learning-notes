@@ -62,9 +62,10 @@ export default function TiptapEditor({ value, onChange, placeholder }: Props) {
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all">
+    <div className="max-h-[420px] overflow-y-auto">
 
       {/* Toolbar */}
-      <div className="flex items-center gap-0.5 flex-wrap px-2 py-1.5 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
+      <div className="sticky top-0 z-10 flex items-center gap-0.5 flex-wrap px-2 py-1.5 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
         <button type="button" title="Bold" onMouseDown={(e) => { e.preventDefault(); editor?.chain().focus().toggleBold().run(); }} className={toolBtn(isActive("bold"))}>
           <Bold className="w-3.5 h-3.5" />
         </button>
@@ -136,6 +137,7 @@ export default function TiptapEditor({ value, onChange, placeholder }: Props) {
       ">
         <EditorContent editor={editor} />
       </div>
+    </div>
     </div>
   );
 }
